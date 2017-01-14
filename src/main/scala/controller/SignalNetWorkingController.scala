@@ -1,7 +1,7 @@
-package com.nobkz.hexagonSingal.controller
+package hexasignal.controller
 
-import com.nobkz.hexagonSingal.view.SignalNetWorkingView
-import com.nobkz.hexagonSingal.SignalNetWorking
+import hexasignal.view.SignalNetWorkingView
+import hexasignal.SignalNetWorking
 
 class SignalNetWorkingController
   (

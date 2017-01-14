@@ -1,4 +1,4 @@
-package com.nobkz.hexagonSingal;
+package hexasignal;
 
 import view.SignalNetWorkingView;
 

@@ -1,4 +1,4 @@
-package com.nobkz.hexagonSingal.signal;
+package hexasignal.signal;
 
 sealed abstract class Signal
 case class NoSignal() extends Signal

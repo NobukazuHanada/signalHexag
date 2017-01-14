@@ -1,15 +1,14 @@
-package com.nobkz.hexagonSingal.view;
+package hexasignal.view
 
-import com.nobkz.hexagonSingal.shape.Hexagon
-import com.nobkz.hexagonSingal.shape.Arrow
+import hexasignal.shape.Hexagon
+import hexasignal.shape.Hexagon.polygon
+import hexasignal.shape.Arrow
+import hexasignal.message.Message
+import scalafx.scene.shape.Shape
 import scalafx.scene.paint.Color._
-import scalafx.scene.layout.Pane
-import scalafx.scene.{ Node => FxNode } 
+import scalafx.scene.{ Group, Node => FxNode }
 import scalafx.Includes._
-import scalafx.scene.input.{MouseEvent, MouseButton, MouseDragEvent, DragEvent, TransferMode}
 import scalafx.beans.property.{DoubleProperty, BooleanProperty}
-import javafx.scene.shape.Polygon
-import scalafx.geometry.Insets
 
 trait DragMoving extends FxNode {
   
@@ -42,10 +41,9 @@ trait ConnectView extends FxNode {
 trait ConnectionNode[A <: ConnectView] extends FxNode {
   var connecting = false
   val connectorView : A
-  val viewGroups : PlacingField
 
 
-  def connectStart(){
+  def connectStart(viewGroups: PlacingField ){
     connectorView.startX() = translateX()
     connectorView.startY() = translateY()
     connectorView.endX() = translateX()
@@ -59,128 +57,26 @@ trait ConnectionNode[A <: ConnectView] extends FxNode {
     connectorView.endY() = y
   }
 
-  def connectEnd(){
+  def connectEnd(viewGroups: PlacingField){
     connecting = false
     viewGroups.children.remove(connectorView)
   }
 }
 
-class PlacingField extends Pane {
-  placingArea =>
+trait Node
+    extends Group
+    with DragMoving
+    with ConnectionNode[Arrow] {
+  node =>
 
-  import scala.collection.mutable.Map
-  var selectedNode : Option[Node] = None
-  val connectors : Map[(Node,Node), Arrow] = Map()
+  val hexagon : Shape = new Hexagon(polygon)
+  children.add(hexagon)
 
+  val connectorView = new Arrow()
+  val dragEventHover =  BooleanProperty(false)
 
-  def connect(startNode : Node, endNode : Node) {
-    val arrow = new Arrow()
-    if( !(connectors contains (startNode -> endNode)) ){
-         arrow.startX <== startNode.translateX
-         arrow.startY <== startNode.translateY
-         arrow.endX <== endNode.translateX
-         arrow.endY <== endNode.translateY
-         children.add(arrow)
-         connectors += (startNode -> endNode) -> arrow
-       }
-    }
+  def message : Message
 
-  style = "-fx-border-color: white"
-  minWidth = 300
-  minHeight = 600
+  hexagon.fill <== when(hover || pressed || dragEventHover) choose rgb(100,100,100,0.5) otherwise rgb(100,100,100,0.1)
 
-
-  import com.nobkz.hexagonSingal.shape.Hexagon.polygon
-
-  def createNode(x : Double, y : Double) {
-    val node = new Node(polygon, this, new Arrow(x,y,x,y)){
-      translateX = x
-      translateY = y
-    }
-
-    children.add(node)
-  }
-
-
-
-  class Node (polygon : Polygon, group: PlacingField, arrow: Arrow)
-      extends Hexagon(polygon)
-      with DragMoving
-      with ConnectionNode[Arrow] {
-
-
-    val connectorView = arrow
-    val viewGroups = group
-    val dragEventHover =  BooleanProperty(false)
-
-
-    fill <== when(hover || pressed || dragEventHover) choose rgb(100,100,100,0.5) otherwise rgb(100,100,100,0.1)
-
-
-    handleEvent(MouseEvent.DragDetected)
-    { (event: MouseEvent) =>
-      startFullDrag()
-    }
-
-    handleEvent(MouseEvent.MousePressed) {
-      (event: MouseEvent) =>
-      import scalafx.scene.input.MouseButton.{Primary, Secondary}
-
-      selectedNode = Some(this)
-      event.button match {
-        case Primary => moveStart()
-        case Secondary =>
-          connectStart()
-        case _ =>
-          selectedNode = None
-      }
-    }
-
-
-    
-
-    handleEvent(MouseDragEvent.MouseDragEntered){
-      (event: MouseEvent) =>
-      if( selectedNode.nonEmpty && !selectedNode.contains(this) ){
-        dragEventHover() = true
-      }
-    }
-
-    handleEvent(MouseDragEvent.MouseDragExited){
-      (event: MouseEvent) =>
-      dragEventHover() = false
-    }
-
-
-    handleEvent(MouseDragEvent.MouseDragReleased){
-      (event: MouseEvent) =>
-      for( n <- selectedNode if n != this ){
-        placingArea.connect(n, this)
-      }
-    }
-
-
-
-    handleEvent(MouseEvent.MouseDragged) {
-      (event: MouseEvent) =>
-      val pos = placingArea.sceneToLocal(event.sceneX,event.sceneY)
-      if( moving ){
-        moving(pos.x, pos.y)
-      }else if( connecting ){
-        connecterMove(pos.x,pos.y)
-      }
-    }
-
-    handleEvent(MouseEvent.MouseReleased) {
-      (event: MouseEvent) =>
-      mouseTransparent = false
-      selectedNode = None
-
-      if( moving ){
-        moveEnd()
-      }else if( connecting ){
-        connectEnd()
-      }
-    }
-  }
 }

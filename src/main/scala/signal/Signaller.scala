@@ -1,4 +1,4 @@
-package com.nobkz.hexagonSingal.signal;
+package hexasignal.signal;
 
 import scala.collection.mutable.Set
 

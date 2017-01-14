@@ -1,6 +1,6 @@
-package com.nobkz.hexagonSingal.model
+package hexasignal.model
 
-import com.nobkz.hexagonSingal.model.{Model, Watcher}
+import hexasignal.model.{Model, Watcher}
 import scalafx.scene.paint.Color
 import scalafx.scene.canvas.Canvas
 import scalafx.scene.shape.{Rectangle, Line => FxLine, Polygon}
@@ -60,10 +60,12 @@ class ViewModelRenderer(val model : ViewModel) extends Scene
     for( viewData <- model.dataModel )
       viewData match {
         case Rect(x,y,w,h,fill,stroke) =>
+          val newX = x % 500
+          val newY = y % 500
           gc.fill = fill
           gc.stroke = stroke
-          gc.fillRect(x,y,w,h)
-          gc.strokeRect(x,y,w,h)
+          gc.fillRect(newX,newY,w,h)
+          gc.strokeRect(newX,newY,w,h)
         case Line(x1,y1,x2,y2,c) =>
           gc.stroke = c
           gc.beginPath()

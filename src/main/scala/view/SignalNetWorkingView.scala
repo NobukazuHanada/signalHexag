@@ -1,8 +1,6 @@
-package com.nobkz.hexagonSingal.view;
+package hexasignal.view;
 
-import com.nobkz.hexagonSingal.SignalNetWorking
-
-
+import hexasignal.SignalNetWorking
 
 class SignalNetWorkingView
   (

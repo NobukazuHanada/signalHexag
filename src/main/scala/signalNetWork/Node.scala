@@ -1,7 +1,7 @@
-package com.nobkz.hexagonSingal.signalNetWork
+package hexasignal.signalNetWork
 
 import scala.collection.mutable.Set
-import com.nobkz.hexagonSingal.signal.{Signaller, Signal}
+import hexasignal.signal.{Signaller, Signal}
 
 class Node(val signaller : Signaller[Signal, Signal] ) {
   val from : Set[Node] = Set()

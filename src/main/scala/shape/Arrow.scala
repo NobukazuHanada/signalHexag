@@ -1,11 +1,11 @@
-package com.nobkz.hexagonSingal.shape;
+package hexasignal.shape;
 
 import scalafx.scene.shape.{Polygon, Line}
 import scalafx.scene.paint.Color._
 import scalafx.scene.{Group}
 import scalafx.beans.property.{DoubleProperty, ObjectProperty}
 import scalafx.geometry.Point2D
-import com.nobkz.hexagonSingal.view.ConnectView
+import hexasignal.view.ConnectView
 
 class Arrow  (_startX :  Double,
               _startY : Double,

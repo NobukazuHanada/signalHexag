@@ -1,4 +1,4 @@
-package com.nobkz.hexagonSingal.model
+package hexasignal.model
 
 
 trait Watcher{

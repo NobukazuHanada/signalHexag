@@ -1,7 +1,7 @@
-package com.nobkz.hexagonSingal;
+package hexasignal;
 
 import scala.collection.mutable.Set
-import com.nobkz.hexagonSingal.signalNetWork.Node
+import hexasignal.signalNetWork.Node
 
 
 object SignalNetWorking{

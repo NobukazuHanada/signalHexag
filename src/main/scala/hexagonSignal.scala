@@ -1,4 +1,4 @@
-package com.nobkz.hexagonSingal;
+package hexasignal
 
 import scalafx.Includes._
 import scalafx.application.JFXApp
@@ -10,8 +10,9 @@ import scalafx.scene.transform.{Translate}
 import scalafx.scene.shape.Sphere
 import scalafx.scene.PerspectiveCamera
 import scalafx.scene.paint.Color._
-import com.nobkz.hexagonSingal.view.PlacingField
+import hexasignal.view.PlacingField
 
+/*
 import akka.actor.{Actor}
 import akka.event.Logging
 
@@ -26,16 +27,39 @@ class MyActor extends Actor {
     case _ => log.info("received unknown message")
   }
 }
-
-
+ */
 
 object Main extends JFXApp {
+  val field = new PlacingField()
+
+  stage = new JFXApp.PrimaryStage {
+    title.value = "Hexagon Signal Editor"
+    width = 930
+    height = 730
+
+    scene = new Scene {
+      fill = Black
+
+
+
+      field.createRectNode(50.0 + 70.0, 10.0)
+      field.createRectNode(50.0 + 70.0, 80.0)
+
+      content = new HBox(field) {
+        translateX = 10
+        translateY = 10
+      }
+    }
+  }
+
+
   val viewStage = new Stage(){
     title() = "Hexagon Signal View"
+
     width = 500
     height = 500
-    import com.nobkz.hexagonSingal.model.{ViewModel, ViewModelRenderer, Rect}
-   
+    import hexasignal.model.{ViewModel, ViewModelRenderer, Rect}
+    
     val viewModel = new ViewModel()
     viewModel.rect(10,10,10,10, Black, White)
     viewModel.rect(100,100,10,10,White,Black)
@@ -51,11 +75,7 @@ object Main extends JFXApp {
           case _ =>
             false
         },
-        {
-          case Rect(x,y,w,h,f,s) =>
-            Rect(x+1,y,w,h,f,s)
-          case x => x
-        }
+        field.updater
       )
     )
     animationTimer.start()
@@ -63,29 +83,5 @@ object Main extends JFXApp {
   }
 
   viewStage.show()
-
-  stage = new JFXApp.PrimaryStage {
-    title.value = "Hexagon Signal Editor"
-    width = 930
-    height = 730
-
-    scene = new Scene {
-      fill = Black
-
-
-      val group1 = new PlacingField()
-      for( i <- 1 to 3 )
-        group1.createNode(i * 50.0 + 40.0, i * 10.0)
-
-
-      val group2 = new PlacingField()
-      for( i <- 1 to 3 )
-        group2.createNode(i * 50.0 + 40.0, i * 10.0)
-
-      content = new HBox(group1, group2) {
-        translateX = 10
-        translateY = 10
-      }
-    }
-  }
+  viewStage.toFront()
 }

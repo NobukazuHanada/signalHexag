@@ -1,4 +1,4 @@
-package com.nobkz.hexagonSingal.shape;
+package hexasignal.shape;
 
 import scalafx.Includes._
 import scalafx.collections.{ObservableBuffer}

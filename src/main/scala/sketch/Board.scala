@@ -1,4 +1,4 @@
-package com.nobkz.hexagonSingal.sketch
+package hexasignal.sketch
 
 class Board {
   

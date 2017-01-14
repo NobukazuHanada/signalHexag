@@ -1,3 +1,3 @@
-package com.nobkz.hexagonSingal.signal;
+package hexasignal.signal;
 
 

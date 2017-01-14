@@ -108,29 +108,5 @@ class PlacingField extends Pane {
       }
     }
   }
-
-
-  def updater : ViewData => ViewData  = {
-    var updater : ViewData => ViewData = (x)=>x
-
-    for(((node1, node2), _) <- connectors ){
-      (node1.message, node2.message) match {
-        case (RectMessage(x1,y1,w1,h1),RectMessage(x2,y2,w2,h2)) =>
-          val diffX = (x2 - x1) / 10
-          val diffY = (y2 - y1) / 10
-          val diffW = (w2 - w1) / 10
-          val diffH = (h2 - h1) / 10
-          updater = {
-             case Rect(x,y,w,h,f,s) =>
-               Rect(x+diffX,y+diffY,w+diffW,h+diffH,f,s)
-             case x => x
-          }
-        case _ =>
-      }
-    }
-    return updater
-  }
- 
-
 }
 

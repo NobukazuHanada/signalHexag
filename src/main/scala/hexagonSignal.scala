@@ -75,7 +75,7 @@ object Main extends JFXApp {
           case _ =>
             false
         },
-        field.updater
+        {x => x}
       )
     )
     animationTimer.start()

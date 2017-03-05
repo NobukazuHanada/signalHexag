@@ -10,6 +10,8 @@ import scalafx.scene.{ Group, Node => FxNode }
 import scalafx.Includes._
 import scalafx.beans.property.{DoubleProperty, BooleanProperty}
 
+import scala.collection.mutable.ArrayBuffer
+
 trait DragMoving extends FxNode {
   
   var moving = false
@@ -42,7 +44,6 @@ trait ConnectionNode[A <: ConnectView] extends FxNode {
   var connecting = false
   val connectorView : A
 
-
   def connectStart(viewGroups: PlacingField ){
     connectorView.startX() = translateX()
     connectorView.startY() = translateY()
@@ -68,6 +69,19 @@ trait Node
     with DragMoving
     with ConnectionNode[Arrow] {
   node =>
+
+  val from : ArrayBuffer[Node] = ArrayBuffer.empty[Node]
+  val to : ArrayBuffer[Node] = ArrayBuffer.empty[Node]
+
+  def addToNode(node: Node) {
+    from += node
+    node.to += this
+  }
+
+  def deleteToNode(node: Node) {
+    from -= node
+    node.to -= this
+  }
 
   val hexagon : Shape = new Hexagon(polygon)
   children.add(hexagon)

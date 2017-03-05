@@ -12,6 +12,8 @@ import scalafx.stage.Stage
 sealed abstract class ViewData
 case class Rect(x : Double, y : Double, w : Double , h : Double, fill : Color, stroke : Color ) extends ViewData
 case class Line(startX : Double, startY : Double, endX : Double, endY : Double, color : Color) extends ViewData
+case class BrokenExpr(s:String) extends ViewData
+case object Undefined extends ViewData
 
 
 class ViewModel extends Model {
@@ -29,13 +31,22 @@ class ViewModel extends Model {
   }
 
   def updateModel(matcher : ViewData => Boolean, update : ViewData => ViewData) {
+    var changedData = false
     dataModel =
       for( viewData <- dataModel )
       yield if( matcher(viewData) ){
-        update(viewData)
+        val data = update(viewData)
+        changedData = data != viewData
+        data
       }else{
         viewData
       }
+    if( changedData )
+      notice()
+  }
+
+  def setDataModel(_dataModel: List[ViewData]) {
+    dataModel = ListBuffer(_dataModel:_*)
     notice()
   }
 
@@ -56,6 +67,7 @@ class ViewModelRenderer(val model : ViewModel) extends Scene
 
   noticed()
   def noticed() {
+    gc.fill = Color.Black
     gc.fillRect(0, 0, 500, 500)
     for( viewData <- model.dataModel )
       viewData match {
@@ -72,6 +84,8 @@ class ViewModelRenderer(val model : ViewModel) extends Scene
           gc.moveTo(x1, y1)
           gc.lineTo(x2, y2)
           gc.closePath()
+          gc.strokePath()
+        case Undefined =>
       }
   }
 

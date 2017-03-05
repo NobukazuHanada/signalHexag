@@ -10,7 +10,11 @@ import scalafx.scene.transform.{Translate}
 import scalafx.scene.shape.Sphere
 import scalafx.scene.PerspectiveCamera
 import scalafx.scene.paint.Color._
+import scalafx.stage.WindowEvent;
 import hexasignal.view.PlacingField
+import de.sciss.synth._
+import ugen._
+import Ops._
 
 /*
 import akka.actor.{Actor}
@@ -28,6 +32,7 @@ class MyActor extends Actor {
   }
 }
  */
+ 
 
 object Main extends JFXApp {
   val field = new PlacingField()
@@ -43,7 +48,10 @@ object Main extends JFXApp {
 
 
       field.createRectNode(50.0 + 70.0, 10.0)
-      field.createRectNode(50.0 + 70.0, 80.0)
+      field.createRectNode(50.0 + 80.0, 80.0)
+      field.createCodeNode(50.0 + 90.0, 80.0)
+      field.createCodeNode(50.0 + 100.0, 80.0)
+      field.createCodeNode(50.0 + 160.0, 80.0)
 
       content = new HBox(field) {
         translateX = 10
@@ -53,17 +61,28 @@ object Main extends JFXApp {
   }
 
 
+  /*val cfg = Server.Config()
+  cfg.program = "/Applications/SuperCollider/SuperCollider.app/Contents/Resources/scsynth"
+
+  Server.run(cfg) { s =>
+    val sin = SynthDef("Sin") {
+      val f1 = "freq1".kr(100)
+      SinOsc.ar(f1)
+    }
+
+    
+   }*/
+
+
+  import hexasignal.model.{ViewModel, ViewModelRenderer
+  ,ViewModelEditor, Rect}
+  
+  val viewModel = new ViewModel()
   val viewStage = new Stage(){
     title() = "Hexagon Signal View"
 
     width = 500
     height = 500
-    import hexasignal.model.{ViewModel, ViewModelRenderer, Rect}
-    
-    val viewModel = new ViewModel()
-    viewModel.rect(10,10,10,10, Black, White)
-    viewModel.rect(100,100,10,10,White,Black)
-    viewModel.line(10,20,100,200,White)
 
     val vmr = new ViewModelRenderer(viewModel)
     scene = vmr
@@ -75,7 +94,7 @@ object Main extends JFXApp {
           case _ =>
             false
         },
-        {x => x}
+        field.updater
       )
     )
     animationTimer.start()
@@ -84,4 +103,12 @@ object Main extends JFXApp {
 
   viewStage.show()
   viewStage.toFront()
+
+  val viewModelEditorStage = new Stage{
+    val vme = new ViewModelEditor(viewModel);
+    scene = vme
+  }
+
+  viewModelEditorStage.show();
+
 }

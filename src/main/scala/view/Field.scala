@@ -135,70 +135,89 @@ class PlacingField extends Pane {
   }
 
   def updater : ViewData => ViewData  = {
-    var updater : ViewData => ViewData = (x)=>x
-    
-    for(((node1, node2), _) <- connectors ){
-      (node1.message, node2.message) match {
-        case (RectMessage(x1,y1,w1,h1),RectMessage(x2,y2,w2,h2)) =>
-          val diffX = (x2 - x1) / 10
-          val diffY = (y2 - y1) / 10
-          val diffW = (w2 - w1) / 10
-          val diffH = (h2 - h1) / 10
-          updater = {
-            case Rect(x,y,w,h,f,s)  =>
-              val newX = (x + diffX) % 500
-              val newY = (y + diffY) % 500
-              Rect(newX,newY,w+diffW,h+diffH,f,s)
-            case x => x
-          }
-        case (CodeMessage(MRect(mx,my,mw,mh)),
-              CodeMessage(Lambda(args, expr)))
-            =>
-          updater = {
-            case rect @ Rect(x,y,w,h,f,s) =>
+    var updaters : List[ViewData => ViewData] =
+      for(((node1, node2), _) <- connectors.toList  )
+      yield {
+        (node1.message, node2.message) match {
+          case (RectMessage(x1,y1,w1,h1),RectMessage(x2,y2,w2,h2)) =>
+            val diffX = (x2 - x1) / 10
+            val diffY = (y2 - y1) / 10
+            val diffW = (w2 - w1) / 10
+            val diffH = (h2 - h1) / 10
+
+            (viewdata : ViewData) => viewdata match {
+              case Rect(x,y,w,h,f,s)  =>
+                val newX = (x + diffX) % 500
+                val newY = (y + diffY) % 500
+                Rect(newX,newY,w+diffW,h+diffH,f,s)
+              case x => x
+            }
+          case (CodeMessage(MRect(mx,my,mw,mh)),
+                CodeMessage(Lambda(args, expr)))
+              =>
+            val checker = (x:Int,y:Int,w:Int,h:Int) => {
               var check = true;
               var varnames : List[(Int, String)] = List();
               for( ((matcher, data), index) <-
-                  List((mx,x), (my, y), (mw, w), (mh, h)).zipWithIndex ){
+                   List((mx,x), (my, y), (mw, w), (mh, h)).zipWithIndex ){
                 matcher match {
                   case MInt(i) =>
                     check = false
                   case MVar(name)  =>
                     varnames :+= (index, name)
-                  case _=>  
+                  case _=>
                 }
               }
-              if( check ){
-                expr match {
-                  case AAdd(AVar(name), AInt(i)) =>
-                    var newRect = rect
-                    for((index,name) <- varnames ){
-                      if( name == name ){
-                        index match {
-                          case 0 =>
-                            newRect = Rect(x+i,y,w,h,f,s)
-                          case 1 =>
-                            newRect = Rect(x,y+i,w,h,f,s)
-                          case 2 =>
-                            newRect = Rect(x,y,w+i,h,f,s)
-                          case 3 =>
-                            newRect = Rect(x,y,w,h,f,s)
-                          case _ => rect 
+              if( check ){ varnames }else{ List() }
+            }
+            (viewData: ViewData) => viewData match {
+              case rect @ Rect(x,y,w,h,f,s) =>
+                var check = true;
+                var varnames : List[(Int, String)] = List();
+                for( ((matcher, data), index) <-
+                     List((mx,x), (my, y), (mw, w), (mh, h)).zipWithIndex ){
+                  matcher match {
+                    case MInt(i) =>
+                      check = false
+                    case MVar(name)  =>
+                      varnames :+= (index, name)
+                    case _=>
+                  }
+                }
+                if( check ){
+                  expr match {
+                    case AAdd(AVar(name), AInt(i)) =>
+                      var newX = x
+                      var newY = y
+                      var newW = w
+                      var newH = h
+                      for((index,name) <- varnames ){
+                        if( name == name ){
+                          index match {
+                            case 0 =>
+                              newX += i
+                            case 1 =>
+                              newY += i
+                            case 2 =>
+                              newW += i
+                            case 3 =>
+                              newH += i
+                            case _ => 
+                          }
                         }
                       }
-                    }
-                    newRect
-                  case _ => rect
+                      Rect(newX, newY, newW, newH, f, s)
+                    case _ => rect
+                  }
+                }else {
+                  rect
                 }
-              }else {
-                rect 
-              }
-            case x => x
-          }
-        case _ =>
+              case x => x
+            }
+          case _ => (x:ViewData) => x
+        }
       }
-    }
-    return updater
+    updaters.foldLeft((x:ViewData)=>x)((oldfunc, addfunc) => (x) => addfunc(oldfunc(x)))
   }
 }
 

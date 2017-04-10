@@ -3,14 +3,13 @@ package hexasignal.view
 import hexasignal.shape.Hexagon
 import hexasignal.shape.Hexagon.polygon
 import hexasignal.shape.Arrow
-import hexasignal.message.Message
 import scalafx.scene.shape.Shape
 import scalafx.scene.paint.Color._
 import scalafx.scene.{ Group, Node => FxNode }
 import scalafx.Includes._
 import scalafx.beans.property.{DoubleProperty, BooleanProperty}
-
 import scala.collection.mutable.ArrayBuffer
+import akka.actor.ActorRef
 
 trait DragMoving extends FxNode {
   
@@ -64,10 +63,21 @@ trait ConnectionNode[A <: ConnectView] extends FxNode {
   }
 }
 
+
+case class AddSender(sender:ActorRef)
+trait ActorController {
+
+  val actor : ActorRef
+  def addSender(sender:ActorRef) : Unit = {
+    actor ! AddSender(sender)
+  }
+}
+
 trait Node
     extends Group
     with DragMoving
-    with ConnectionNode[Arrow] {
+    with ConnectionNode[Arrow]
+    with ActorController {
   node =>
 
   val from : ArrayBuffer[Node] = ArrayBuffer.empty[Node]
@@ -88,8 +98,6 @@ trait Node
 
   val connectorView = new Arrow()
   val dragEventHover =  BooleanProperty(false)
-
-  def message : Message
 
   hexagon.fill <== when(hover || pressed || dragEventHover) choose rgb(100,100,100,0.5) otherwise rgb(100,100,100,0.1)
 

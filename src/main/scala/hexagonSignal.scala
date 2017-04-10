@@ -15,6 +15,8 @@ import hexasignal.view.PlacingField
 import de.sciss.synth._
 import ugen._
 import Ops._
+import akka.actor.ActorSystem
+import akka.actor.ActorContext
 
 /*
 import akka.actor.{Actor}
@@ -35,7 +37,8 @@ class MyActor extends Actor {
  
 
 object Main extends JFXApp {
-  val field = new PlacingField()
+  val actorSystem = ActorSystem("sighex")
+  val field = new PlacingField( actorSystem )
 
   stage = new JFXApp.PrimaryStage {
     title.value = "Hexagon Signal Editor"
@@ -47,15 +50,17 @@ object Main extends JFXApp {
 
 
 
-      field.createRectNode(50.0 + 70.0, 10.0)
-      field.createRectNode(50.0 + 80.0, 80.0)
-      field.createCodeNode(50.0 + 90.0, 80.0)
-      field.createCodeNode(50.0 + 100.0, 80.0)
-      field.createCodeNode(50.0 + 160.0, 80.0)
+      field.createRectMatcherNode(50.0 + 70.0, 10.0)
+      field.createRectMatcherNode(50.0 + 80.0, 80.0)
 
       content = new HBox(field) {
         translateX = 10
         translateY = 10
+      }
+      import scalafx.stage.WindowEvent
+      handleEvent(WindowEvent.WindowCloseRequest) {
+        (event:WindowEvent) =>
+        val future = actorSystem.terminate()
       }
     }
   }
@@ -94,7 +99,7 @@ object Main extends JFXApp {
           case _ =>
             false
         },
-        field.updater
+        {x => x}
       )
     )
     animationTimer.start()

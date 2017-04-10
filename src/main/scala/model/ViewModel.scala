@@ -15,45 +15,52 @@ case class Line(startX : Double, startY : Double, endX : Double, endY : Double, 
 case class BrokenExpr(s:String) extends ViewData
 case object Undefined extends ViewData
 
+object IDGenerator{
+  type Id = String
+  val hostname = java.net.InetAddress.getLocalHost().getHostName()
+  var counter = 0
+
+  def generate = {
+    val now = java.time.Instant.now().toString()
+    counter += 1;
+    val text = hostname + now + counter.toString()
+    java.security.MessageDigest.getInstance("MD5").digest(text.getBytes).map("%02x".format(_)).mkString
+  }
+}
 
 class ViewModel extends Model {
-  import scala.collection.mutable.ListBuffer
-  var dataModel : ListBuffer[ViewData] = ListBuffer[ViewData]()
+  import IDGenerator.Id
+  var dataModel : Map[Id, ViewData] = Map()
 
   def rect(x : Double, y : Double, w : Double, h : Double, fill : Color, stroke : Color) {
-    dataModel += Rect(x,y,w,h,fill,stroke)
+    dataModel += (IDGenerator.generate -> Rect(x,y,w,h,fill,stroke))
+
     notice()
   }
 
   def line(x1 : Double, y1 : Double, x2 : Double, y2 : Double, c : Color) {
-    dataModel += Line(x1,y1,x2,y2,c)
+    dataModel += (IDGenerator.generate -> Line(x1,y1,x2,y2,c))
     notice()
   }
 
   def updateModel(matcher : ViewData => Boolean, update : ViewData => ViewData) {
     var changedData = false
     dataModel =
-      for( viewData <- dataModel )
+      for( (id, viewData) <- dataModel )
       yield if( matcher(viewData) ){
         val data = update(viewData)
         changedData = data != viewData
-        data
+        (id -> data)
       }else{
-        viewData
+        (id -> viewData)
       }
     if( changedData )
       notice()
   }
 
-  def setDataModel(_dataModel: List[ViewData]) {
-    dataModel = ListBuffer(_dataModel:_*)
-    notice()
+  def setDataModel(data : Map[Id, ViewData]) {
+    dataModel = data
   }
-
-  def modelMatch(matcher : ViewData => Boolean) : List[ViewData] =
-    dataModel.filter(matcher).toList
-
-  def toSeq() : Seq[ViewData] = dataModel.toSeq
 
 }
 
@@ -69,7 +76,7 @@ class ViewModelRenderer(val model : ViewModel) extends Scene
   def noticed() {
     gc.fill = Color.Black
     gc.fillRect(0, 0, 500, 500)
-    for( viewData <- model.dataModel )
+    for( (id, viewData) <- model.dataModel )
       viewData match {
         case Rect(x,y,w,h,fill,stroke) =>
           val newX = x % 500

@@ -1,24 +1,15 @@
 package hexasignal.view
 
-import hexasignal.view.Node
-import hexasignal.shape.Hexagon
-import hexasignal.shape.Arrow
 import hexasignal.message.{Message, CodeMessage, CodeCompiler}
-import scalafx.scene.paint.Color._
-import scalafx.scene.canvas.Canvas
-import scalafx.scene.layout.{Pane, StackPane}
-import scalafx.scene.{ Group, Node => FxNode }
-import scalafx.Includes._
-import scalafx.scene.input.{MouseEvent, MouseButton, MouseDragEvent, DragEvent, TransferMode}
-import scalafx.beans.property.{DoubleProperty, BooleanProperty}
-import javafx.scene.shape.Polygon
-import scalafx.geometry.Insets
 import scalafx.scene.control.TextArea
-import scalafx.scene.layout.Background
+import akka.actor.{Actor, ActorSystem, Props, ActorRef}
 
 
-class CodeNode extends
+
+class CodeNode(actorSystem:ActorSystem) extends
     Node { node =>
+
+  val actor = actorSystem.actorOf(Props[CodeReader])
 
   val textArea = new TextArea() {
     translateX = -30
@@ -32,6 +23,14 @@ class CodeNode extends
   
   def message : Message = {
     CodeMessage(CodeCompiler.read(textArea.text()))
+  }
+
+  class CodeReader extends Actor{
+    var senders : List[ActorRef] = List()
+
+    def receive = {
+      case AddSender(sender) => senders :+= sender
+    }
   }
 
 }

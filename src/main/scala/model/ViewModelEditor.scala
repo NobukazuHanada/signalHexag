@@ -64,6 +64,7 @@ class ViewModelEditor(val model : ViewModel) extends Scene with Watcher{
 
       data += (IDGenerator.generate -> viewData)
     }
+    println(data)
     data
   }
 

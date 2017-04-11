@@ -80,7 +80,7 @@ object Main extends JFXApp {
 
 
   import hexasignal.model.{ViewModel, ViewModelRenderer
-  ,ViewModelEditor, Rect}
+  ,ViewModelEditor}
   
   val viewModel = new ViewModel()
   val viewStage = new Stage(){
@@ -92,15 +92,7 @@ object Main extends JFXApp {
     val vmr = new ViewModelRenderer(viewModel)
     scene = vmr
     val animationTimer = AnimationTimer((time) =>
-      viewModel.updateModel(
-        {
-          case Rect(x,y,w,h,f,s) =>
-            true
-          case _ =>
-            false
-        },
-        {x => x}
-      )
+      true
     )
     animationTimer.start()
 

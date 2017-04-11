@@ -1,13 +1,8 @@
 package hexasignal.model
 
-import hexasignal.model.{Model, Watcher}
 import scalafx.scene.paint.Color
 import scalafx.scene.canvas.Canvas
-import scalafx.scene.shape.{Rectangle, Line => FxLine, Polygon}
 import scalafx.scene.Scene
-import scalafx.scene.Group
-import scalafx.scene.Node
-import scalafx.stage.Stage
 
 sealed abstract class ViewData
 case class Rect(x : Double, y : Double, w : Double , h : Double, fill : Color, stroke : Color ) extends ViewData
@@ -32,34 +27,11 @@ class ViewModel extends Model {
   import IDGenerator.Id
   var dataModel : Map[Id, ViewData] = Map()
 
-  def rect(x : Double, y : Double, w : Double, h : Double, fill : Color, stroke : Color) {
-    dataModel += (IDGenerator.generate -> Rect(x,y,w,h,fill,stroke))
 
-    notice()
-  }
-
-  def line(x1 : Double, y1 : Double, x2 : Double, y2 : Double, c : Color) {
-    dataModel += (IDGenerator.generate -> Line(x1,y1,x2,y2,c))
-    notice()
-  }
-
-  def updateModel(matcher : ViewData => Boolean, update : ViewData => ViewData) {
-    var changedData = false
-    dataModel =
-      for( (id, viewData) <- dataModel )
-      yield if( matcher(viewData) ){
-        val data = update(viewData)
-        changedData = data != viewData
-        (id -> data)
-      }else{
-        (id -> viewData)
-      }
-    if( changedData )
-      notice()
-  }
 
   def setDataModel(data : Map[Id, ViewData]) {
     dataModel = data
+    notice()
   }
 
 }
@@ -92,7 +64,7 @@ class ViewModelRenderer(val model : ViewModel) extends Scene
           gc.lineTo(x2, y2)
           gc.closePath()
           gc.strokePath()
-        case Undefined =>
+        case _ =>
       }
   }
 

@@ -6,10 +6,10 @@ import akka.actor.{Actor, ActorSystem, Props, ActorRef}
 
 
 
-class CodeNode(actorSystem:ActorSystem) extends
+class CodeNode extends
     Node { node =>
 
-  val actor = actorSystem.actorOf(Props[CodeReader])
+  val actor = Field.createActor(Props[CodeReader])
 
   val textArea = new TextArea() {
     translateX = -30

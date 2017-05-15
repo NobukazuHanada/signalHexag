@@ -21,13 +21,23 @@ object IDGenerator{
     val text = hostname + now + counter.toString()
     java.security.MessageDigest.getInstance("MD5").digest(text.getBytes).map("%02x".format(_)).mkString
   }
+  
+  def generate(text :String) = {
+    val now = java.time.Instant.now().toString()
+    counter += 1;
+    val phrase = text + hostname + now + counter.toString() 
+    java.security.MessageDigest.getInstance("MD5").digest(phrase.getBytes).map("%02x".format(_)).mkString
+  }
 }
 
 class ViewModel extends Model {
   import IDGenerator.Id
   var dataModel : Map[Id, ViewData] = Map()
 
-
+  def update(id:Id, viewData:ViewData) {
+    dataModel += (id -> viewData)
+    notice()
+  }
 
   def setDataModel(data : Map[Id, ViewData]) {
     dataModel = data

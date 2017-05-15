@@ -9,7 +9,10 @@ import scalafx.scene.{ Group, Node => FxNode }
 import scalafx.Includes._
 import scalafx.beans.property.{DoubleProperty, BooleanProperty}
 import scala.collection.mutable.ArrayBuffer
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 import akka.actor.ActorRef
+
 
 trait DragMoving extends FxNode {
   
@@ -67,9 +70,12 @@ trait ConnectionNode[A <: ConnectView] extends FxNode {
 case class AddSender(sender:ActorRef)
 trait ActorController {
 
-  val actor : ActorRef
+  val actor : Future[ActorRef]
+  def sendToActor(message: Any) {
+    actor.map(_ ! message)
+  }
   def addSender(sender:ActorRef) : Unit = {
-    actor ! AddSender(sender)
+    actor.map(_ ! AddSender(sender))
   }
 }
 

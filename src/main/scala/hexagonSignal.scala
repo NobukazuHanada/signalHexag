@@ -10,13 +10,12 @@ import scalafx.scene.transform.{Translate}
 import scalafx.scene.shape.Sphere
 import scalafx.scene.PerspectiveCamera
 import scalafx.scene.paint.Color._
-import scalafx.stage.WindowEvent;
+import scalafx.stage.WindowEvent
 import hexasignal.view.PlacingField
+import hexasignal.view.Field
 import de.sciss.synth._
 import ugen._
 import Ops._
-import akka.actor.ActorSystem
-import akka.actor.ActorContext
 
 /*
 import akka.actor.{Actor}
@@ -37,8 +36,7 @@ class MyActor extends Actor {
  
 
 object Main extends JFXApp {
-  val actorSystem = ActorSystem("sighex")
-  val field = new PlacingField( actorSystem )
+  val field = new PlacingField()
 
   stage = new JFXApp.PrimaryStage {
     title.value = "Hexagon Signal Editor"
@@ -51,7 +49,7 @@ object Main extends JFXApp {
 
 
       field.createRectMatcherNode(50.0 + 70.0, 10.0)
-      field.createRectMatcherNode(50.0 + 80.0, 80.0)
+      field.createRectRewriter(50.0 + 80.0, 20.0)
 
       content = new HBox(field) {
         translateX = 10
@@ -60,7 +58,7 @@ object Main extends JFXApp {
       import scalafx.stage.WindowEvent
       handleEvent(WindowEvent.WindowCloseRequest) {
         (event:WindowEvent) =>
-        val future = actorSystem.terminate()
+        val future = Field.terminate
       }
     }
   }
@@ -91,11 +89,31 @@ object Main extends JFXApp {
 
     val vmr = new ViewModelRenderer(viewModel)
     scene = vmr
-    val animationTimer = AnimationTimer((time) =>
-      true
+
+    val animationTimer = AnimationTimer(
+      (time) => {
+        val dataModel = viewModel.dataModel
+        field.sendToNode(dataModel)
+      }
     )
     animationTimer.start()
+    import akka.pattern.ask
+    import scala.collection.mutable.ListBuffer
+    import Field.timeout
+    import hexasignal.view.Data
+    import scala.concurrent.ExecutionContext.Implicits.global
+    import scala.concurrent.Future
 
+    def askLoop : Future[Unit] = {
+      ask(Field.actor, Field.GetCommands).mapTo[List[Any]].map {
+        commands => commands map {
+          case Data(id, data) =>
+            println(data)
+            viewModel(id) = data
+        }
+      }
+    } flatMap(_=> askLoop)
+    val future = askLoop
   }
 
   viewStage.show()
@@ -107,5 +125,4 @@ object Main extends JFXApp {
   }
 
   viewModelEditorStage.show();
-
 }

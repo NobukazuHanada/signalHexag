@@ -5,14 +5,60 @@ import scalafx.scene.layout.Pane
 import scalafx.Includes._
 import scalafx.scene.input.{MouseEvent, MouseButton, MouseDragEvent}
 import MouseButton.{Primary, Secondary}
-import scala.collection.mutable.Map
-import akka.actor.ActorSystem
+import akka.actor.{Actor, ActorRef, Props,  ActorSystem}
+import hexasignal.model.ViewData
+import hexasignal.model.IDGenerator.Id
+import akka.pattern.{ask}
+import akka.util.Timeout
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
+object Field {
+  val actorSystem = ActorSystem.create("syghexActorSystem")
+  val actor = actorSystem.actorOf(Props[FieldActor])
+  implicit val timeout = new Timeout(5.seconds)
+  
+  case class CreateActor(props :Props)
+  case class ActorOf(actorRef :ActorRef)
+  case object GetCommands
 
-class PlacingField(val actorSystem:ActorSystem) extends Pane {
+  def createActor(props:Props) : Future[ActorRef] = {
+    for(ActorOf(actorRef) <- (ask(actor, CreateActor(props))).mapTo[ActorOf])
+    yield actorRef
+  }
+
+  def terminate {
+    actorSystem.terminate()
+  }
+}
+
+class FieldActor extends Actor {
+  import Field._
+
+  import scala.collection.mutable.ListBuffer
+
+  var commands : ListBuffer[Any] = ListBuffer()
+
+  def receive = {
+    case CreateActor(props) => sender ! ActorOf(context.actorOf(props))
+    case GetCommands =>
+      sender ! commands.result()
+      commands = ListBuffer()
+    case any => commands += any
+  }
+}
+
+class PlacingField extends Pane {
   placingArea =>
+  
   var selectedNode : Option[Node] = None
-  val connectors : Map[(Node,Node), Arrow] = Map() 
+  var connectors : Map[(Node,Node), Arrow] = Map()
+  var nodes : List[Node] = List()
+
+  style = "-fx-border-color: white"
+  minWidth = 300
+  minHeight = 600
 
   def connect(startNode : Node, endNode : Node) {
     val arrow = new Arrow()
@@ -24,24 +70,42 @@ class PlacingField(val actorSystem:ActorSystem) extends Pane {
       children.add(arrow)
       connectors += (startNode -> endNode) -> arrow
       startNode.addToNode(endNode)
+      for{
+        endActor <- endNode.actor
+      } startNode.addSender(endActor)
+    }
+  }
+ 
+  def sendToNode(data:Map[Id, ViewData]){
+    for((id, viewData) <- data){
+      val sendData = Data(id, viewData)
+      for(((startNode,_), _) <- connectors ){
+        startNode.sendToActor(sendData) 
+      }
     }
   }
 
-  style = "-fx-border-color: white"
-  minWidth = 300
-  minHeight = 600
-
   def createRectMatcherNode(x : Double, y : Double) {
-    val node = new RectMatcherNode(actorSystem){
+    val node = new RectMatcherNode{
       translateX = x
       translateY = y
     }
     addNode(node)
   }
 
+  def createRectRewriter(x : Double, y : Double) {
+    val node = new RectRewriteNode{
+      translateX = x
+      translateY = y
+    }
+    addNode(node)
+    node.addSender(Field.actor)
+  }
+
 
   def addNode(node: Node) {
     children.add(node)
+    nodes :+= node
     node.hexagon.handleEvent(MouseEvent.DragDetected)
     { (event: MouseEvent) =>
       startFullDrag()
@@ -78,8 +142,6 @@ class PlacingField(val actorSystem:ActorSystem) extends Pane {
         placingArea.connect(n, node)
       }
     }
-
-
 
     node.handleEvent(MouseEvent.MouseDragged) {
       (event: MouseEvent) =>

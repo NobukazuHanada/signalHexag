@@ -2,6 +2,7 @@ package hexasignal.pico
 
 object Pico {
 
+  case class PicoSentence(expr:PicoExpr*)
   sealed class PicoExpr {
     def toOption : Option[PicoExpr] = Some(this)
   }
@@ -22,16 +23,17 @@ object Pico {
   case class BindingMap(map:Map[PicoSymbol, PicoExpr])
 
 
-  sealed class PExpr
+  case class PSentence(expr:PExpr*)
 
+  sealed class PExpr
   case class ParList(list: PExpr*) extends PExpr
   case class BracketList(list:PExpr*) extends PExpr
-  class PAtom extends PExpr
+  sealed class PAtom extends PExpr
 
   case class PSymbol(name:String) extends PAtom
-  class PNumber extends PAtom
+  sealed class PNumber extends PAtom
   case class PString(string:String) extends PAtom
-  class PBool extends PAtom
+  sealed class PBool extends PAtom
 
   case class PInt(i:Int) extends PNumber
   case class PFloat(f:Float) extends PNumber

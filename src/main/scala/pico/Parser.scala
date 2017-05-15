@@ -6,13 +6,24 @@ import scala.util.parsing.input._
 object PicoParser {
   import Pico._
 
-  def parse(input:String) : Option[PicoExpr] = {
+  def parse(input:String) : Option[PicoSentence] = {
     import PicoReader._
-    parseAll(pexpr, input) match {
-      case Success(result, next) => pexprToPicoExpr(result)
-      case Error(_, next) => None
+    parseAll(psentence, input) match {
+      case Success(result, next) => psentenceToPicoSentence(result)
+      case _ => None
     }
   }
+
+  def psentenceToPicoSentence(expr:PSentence) : Option[PicoSentence] =
+    expr match {
+      case PSentence() => None
+      case PSentence(expr) => pexprToPicoExpr(expr) map { PicoSentence(_) }
+      case PSentence(first, rest @_*)  =>
+        for{
+          first <- pexprToPicoExpr(first)
+          PicoSentence(rest @_*) <- psentenceToPicoSentence(PSentence(rest:_*))
+        } yield PicoSentence(first +: rest:_*)
+    }
 
   def pexprToPicoExpr(pexpr:PExpr) : Option[PicoExpr] = {
     pexpr match {
@@ -97,6 +108,7 @@ object PicoReader extends RegexParsers {
   import Pico._
 
   override val skipWhitespace = false
+  def psentence : Parser[PSentence] = rep(pexpr) ^^ { PSentence(_:_*) }
 
   def pexpr = patom | parlist | bracketlist
 

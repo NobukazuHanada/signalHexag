@@ -8,12 +8,14 @@ class PicoCompilerSuite extends FunSuite {
 
   test("pico parser simple parse") {
     assert(parse("(define (add x y) (+ x y))").get ==
-             PicoDefine("add",
-                        PicoLambda(PicoArgs(PicoSymbol("x"), PicoSymbol("y")),
-                                   PicoApply(PicoSymbol("+"),
-                                             PicoSymbol("x"),
-                                             PicoSymbol("y"))))
+             PicoSentence(
+               PicoDefine("add",
+                          PicoLambda(PicoArgs(PicoSymbol("x"), PicoSymbol("y")),
+                                     PicoApply(PicoSymbol("+"),
+                                               PicoSymbol("x"),
+                                               PicoSymbol("y"))))
              )
+    )
 
   }
 

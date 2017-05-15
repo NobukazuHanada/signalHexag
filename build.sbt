@@ -9,5 +9,15 @@ lazy val root = (project in file(".")).
     libraryDependencies += "org.scala-lang.modules" %% "scala-parser-combinators" % "1.0.5",
     libraryDependencies += "org.scalactic" %% "scalactic" % "3.0.1",
     libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.1" % "test",
+    scalacOptions ++= Seq(
+      "-deprecation",
+      "-feature",
+      "-unchecked",
+      "-Xlint",
+      "-Ywarn-dead-code",
+      "-Ywarn-numeric-widen",
+      "-Ywarn-value-discard"
+    ),
     fork := true
   )
+

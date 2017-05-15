@@ -1,8 +1,29 @@
 package hexasignal.pico
 
 object Pico {
+
+  sealed class PicoExpr {
+    def toOption : Option[PicoExpr] = Some(this)
+  }
+  case class PicoInt(n:Int) extends PicoExpr
+  case class PicoFloat(f:Float) extends PicoExpr
+  case class PicoString(s:String) extends PicoExpr
+  case class PicoSymbol(name:String) extends PicoExpr
+  case object PicoTrue extends PicoExpr
+  case object PicoFalse extends PicoExpr
+  case class PicoList(list:PicoExpr*) extends PicoExpr
+  case class PicoLambda(args:PicoArgs, expr:PicoExpr) extends PicoExpr
+  case class PicoDefine(name:String, expr:PicoExpr) extends PicoExpr
+  case class PicoIf(cond:PicoExpr, thn:PicoExpr, els:Option[PicoExpr]) extends PicoExpr
+  case class PicoLet(pico:BindingMap, expr:PicoExpr*) extends PicoExpr
+  case class PicoApply(pico:PicoExpr, expr:PicoExpr*) extends PicoExpr
+
+  case class PicoArgs(args:PicoSymbol*)
+  case class BindingMap(map:Map[PicoSymbol, PicoExpr])
+
+
   sealed class PExpr
-  
+
   case class ParList(list: PExpr*) extends PExpr
   case class BracketList(list:PExpr*) extends PExpr
   class PAtom extends PExpr
@@ -17,4 +38,5 @@ object Pico {
 
   case object PTrue extends PBool
   case object PFalse extends PBool
+
 }

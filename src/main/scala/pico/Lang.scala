@@ -22,7 +22,6 @@ object Pico {
   case class PicoArgs(args:PicoSymbol*)
   case class BindingMap(map:Map[PicoSymbol, PicoExpr])
 
-
   case class PSentence(expr:PExpr*)
 
   sealed class PExpr

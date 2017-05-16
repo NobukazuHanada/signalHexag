@@ -3,6 +3,131 @@ package hexasignal.pico
 import scala.util.parsing.combinator._
 import scala.util.parsing.input._
 
+class PicoVM {
+  import Pico._
+  import PicoVM._
+
+  def run(program:PicoSentence, env:Environment) : (Entity, Environment) = {
+    program match {
+      case PicoSentence() => (Empty, env)
+      case PicoSentence(head) => runExpr(head, env)
+      case PicoSentence(head, rest @_*) => run(PicoSentence(rest:_*), runExpr(head, env)._2)
+    }
+  }
+
+  def runExpr(expr: PicoExpr, env: Environment) : (Entity, Environment) = 
+    expr match {
+      case PicoInt(n) =>
+        (EntInt(n), env)
+      case PicoFloat(f) =>
+        (EntFloat(f), env)
+      case PicoString(s) =>
+        (EntString(s), env)
+      case symbol@PicoSymbol(s) =>
+        env.get(symbol) match {
+          case Some(e) => (e,env)
+          case None => (EntSymbol(s),env)
+        }
+      case PicoTrue =>
+        (EntTrue, env)
+      case PicoFalse =>
+        (EntFalse, env)
+      case PicoList(list @_*) =>
+        val entValues = list map { elm => runExpr(elm, env)._1 }
+        (EntList(entValues:_*), env)
+      case PicoLambda(args, expr) =>
+        (EntLambda(args, expr, env), env)
+      case PicoDefine(name, expr) =>
+        val (entity, _) = runExpr(expr, env)
+        (Empty, env + (PicoSymbol(name) -> entity))
+      case PicoIf(cond, thn, els) =>
+        runExpr(cond, env)._1 match {
+          case EntFalse =>
+          els match {
+            case Some(e) => runExpr(e, env)
+            case None => (Empty, env)
+          }
+          case _ => runExpr(thn, env)
+        }
+      case PicoLet(bindings, exprs @_*) =>
+        val letEnv = bindingsToEnv(bindings, env)
+        val (entity, _) = exprs.foldRight((Empty:Entity,letEnv)) {
+          (expr, entitiAndEnv) =>
+          runExpr(expr, entitiAndEnv._2)
+        }
+        (entity,env)
+      case PicoApply(funcExpr, expr @_*) =>
+        val func = runExpr(funcExpr, env)._1
+        val entities = expr map { runExpr(_, env)._1 }
+        func match {
+          case EntLambda(PicoArgs(args @_*), expr, env) =>
+            var newEnv = env
+            for((symbol, value) <- args.zip(entities)){
+              newEnv += symbol -> value
+            }
+            (runExpr(expr, newEnv)._1, env)
+        }
+    }
+
+
+  def bindingsToEnv(bindings:BindingMap, env: Environment) : Environment =
+    bindings match {
+      case BindingMap(letMap) =>
+        val eletMap = letMap.map { binds => (binds._1, runExpr(binds._2, env)._1) }
+        var newEnv = env
+        for((symbol,value) <- eletMap) {
+          newEnv += (symbol -> value)
+        }
+        newEnv
+    }
+
+}
+
+object PicoVM {
+  import Pico._
+  sealed class Entity
+  object Empty extends Entity
+  sealed class EntValue extends Entity
+
+  case class EntInt(n:Int) extends EntValue
+  case class EntFloat(f:Float) extends EntValue
+  case class EntString(s:String) extends EntValue
+  case object EntTrue extends EntValue
+  case object EntFalse extends EntValue
+  case class EntSymbol(name:String) extends EntValue
+  case class EntList(values:Entity*) extends EntValue
+  case class EntLambda(args:PicoArgs, expr:PicoExpr, env: Environment) extends EntValue
+
+}
+
+object Environment {
+  import Pico._
+  import PicoVM._
+  def apply() : Environment = new Environment(Map[PicoSymbol, Entity]())
+
+  def apply(maps:(PicoSymbol, Entity)*) : Environment = {
+    val mutableMap = scala.collection.mutable.Map[PicoSymbol, Entity]()
+    for(elem <- maps) {
+      mutableMap += elem
+    }
+    new Environment(mutableMap.toMap)
+  }
+
+  def apply(map:Map[PicoSymbol, Entity]) = new Environment(map)
+}
+
+
+class Environment private (val varialbeMap: Map[Pico.PicoSymbol, PicoVM.Entity]) {
+  import Pico._
+  import PicoVM._
+
+  def get(symbol:PicoSymbol) : Option[Entity] =
+    varialbeMap.get(symbol)
+
+  def +(cell:(PicoSymbol, Entity)) : Environment =
+    Environment(varialbeMap + cell)
+}
+
 object PicoParser {
   import Pico._
 
@@ -108,7 +233,7 @@ object PicoReader extends RegexParsers {
   import Pico._
 
   override val skipWhitespace = false
-  def psentence : Parser[PSentence] = rep(pexpr) ^^ { PSentence(_:_*) }
+  def psentence : Parser[PSentence] = repsep  (pexpr, whiteSpace) ^^ { PSentence(_:_*) }
 
   def pexpr = patom | parlist | bracketlist
 

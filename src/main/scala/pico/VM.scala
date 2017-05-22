@@ -13,12 +13,13 @@ class PicoVM(env: Environment) {
   private var _env: Environment = env
 
   def text: String = _text
-  def text_(input:String) =
+  def text_=(input:String) =
   if( _text != input ) {
     _text = input
     PicoParser.parse(input) match {
       case Success(ast) =>
         _ast = ast
+        _text = UnParser.unparse(ast)
         Runner.run(ast) match {
           case Success((_, env:Environment)) => _env = env
           case _ => 

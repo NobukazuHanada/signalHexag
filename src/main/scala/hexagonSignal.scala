@@ -125,4 +125,13 @@ object Main extends JFXApp {
   }
 
   viewModelEditorStage.show();
+
+  import hexasignal.pico.editor.PicoEditor
+  import hexasignal.pico.Environment
+  val picoEditorStage = new Stage{
+    title = "pico editor"
+    scene = new PicoEditor(Environment()) 
+  }
+  picoEditorStage.show()
+
 }

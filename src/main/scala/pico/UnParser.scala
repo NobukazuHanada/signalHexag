@@ -13,7 +13,7 @@ object UnParser {
       case PicoSentence(exprs @ _*) =>
         exprs.foldRight(List[String]()) {
           (expr, texts) =>
-          texts :+ unparseExpr(expr, 1)
+          unparseExpr(expr, 1) +: texts
         } mkString "\n\n"
     }
 

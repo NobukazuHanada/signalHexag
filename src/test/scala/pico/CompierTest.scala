@@ -17,15 +17,12 @@ class PicoCompilerSuite extends FunSuite {
                                                PicoSymbol("y"))))
                ).toResult
     )
-
   }
-
 }
 
 class PicoReaderSuite  extends FunSuite {
   import Pico._
   import PicoReader._
-  import Result._
 
   test("pexpr parse") {
     assert(parseAll(pexpr, "(define func [x y] [(+ x y) (- x y)] 100 100.0 \"string\" true)").get ==

@@ -27,4 +27,7 @@ class Environment private (val varialbeMap: Map[Pico.PicoSymbol, PicoVM.Entity])
 
   def +(cell:(PicoSymbol, Entity)) : Environment =
     Environment(varialbeMap + cell)
+
+  def addForeignFunc[F](name:String)(f:Seq[Entity] => F): Environment =
+    this + (PicoSymbol(name) -> EntForeignFunc(f))
 }

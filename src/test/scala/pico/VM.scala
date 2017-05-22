@@ -3,7 +3,6 @@ package hexasignal.pico
 import org.scalatest.FunSuite
 
 class PicoVMSuite extends FunSuite {
-  import Pico._
   import PicoParser.parse
   import PicoVM._
   import Result._
@@ -21,11 +20,11 @@ class PicoVMSuite extends FunSuite {
     val Success(ast) = parse("(define rect1 (rectangle 1 2 3 4)) rect1")
     val vm = new PicoVM()
     case class Rect(x:Int, y:Int, w:Int, h:Int)
-    val foreingFunc : Seq[Entity] =>  Rect = {
+    implicit val environment =
+      Environment().addForeignFunc("rectangle") {
       case Seq(EntInt(x), EntInt(y), EntInt(w), EntInt(h)) =>
         Rect(x,y,w,h)
     }
-    implicit val environment = Environment(PicoSymbol("rectangle") -> EntForeignFunc(foreingFunc))
     assert(vm.run(ast).map(_._1) == EntForeignValue(Rect(1,2,3,4)).toResult)
   }
 }

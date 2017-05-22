@@ -3,7 +3,7 @@ package hexasignal.pico
 
 object Environment {
   import Pico._
-  import PicoVM._
+  import Runner._
   def apply() : Environment = new Environment(Map[PicoSymbol, Entity]())
 
   def apply(maps:(PicoSymbol, Entity)*) : Environment = {
@@ -18,9 +18,9 @@ object Environment {
 }
 
 
-class Environment private (val varialbeMap: Map[Pico.PicoSymbol, PicoVM.Entity]) {
+class Environment private (val varialbeMap: Map[Pico.PicoSymbol, Runner.Entity]) {
   import Pico._
-  import PicoVM._
+  import Runner._
 
   def get(symbol:PicoSymbol) : Option[Entity] =
     varialbeMap.get(symbol)

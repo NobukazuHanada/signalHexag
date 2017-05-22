@@ -13,6 +13,7 @@ object Pico {
   case class PicoList(list:PicoExpr*) extends PicoExpr
   case class PicoLambda(args:PicoArgs, expr:PicoExpr) extends PicoExpr
   case class PicoDefine(name:String, expr:PicoExpr) extends PicoExpr
+  case class PicoDefineLambda(name:String, args:PicoArgs, expr:PicoExpr) extends PicoExpr
   case class PicoIf(cond:PicoExpr, thn:PicoExpr, els:Option[PicoExpr]) extends PicoExpr
   case class PicoLet(pico:BindingMap, expr:PicoExpr*) extends PicoExpr
   case class PicoApply(pico:PicoExpr, expr:PicoExpr*) extends PicoExpr

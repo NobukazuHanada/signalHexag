@@ -52,7 +52,7 @@ object PicoParser {
         for{
           a <- parlistArgsToPicoArgs(args.toList)
           e <- pexprToPicoExpr(expr)
-        }  yield PicoDefine(name, PicoLambda(a, e))
+        }  yield PicoDefineLambda(name, a, e)
       case ParList(PSymbol("if"),cond, thn) =>
         for{ c <- pexprToPicoExpr(cond)
              t <- pexprToPicoExpr(thn)

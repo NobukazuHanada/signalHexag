@@ -23,6 +23,7 @@ object Result{
     def toResult : Result[T] = Success(t)
   }
 
+
   implicit class ToResultSeq[+T](seqResult: Seq[Result[T]]) {
     def toResultSeq : Result[Seq[T]] =
     seqResult.foldRight(Seq().toResult:Result[Seq[T]]) {

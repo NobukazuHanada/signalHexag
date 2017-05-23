@@ -126,12 +126,35 @@ object Main extends JFXApp {
 
   viewModelEditorStage.show();
 
-  import hexasignal.pico.editor.PicoEditor
+  import hexasignal.pico.editor.PicoTextEditor
+  import hexasignal.pico.editor.PicoValueTable.PicoValueTable
+  import hexasignal.pico.PicoVM
+  import hexasignal.pico.Runner._
   import hexasignal.pico.Environment
+  var env = Environment()
+  case class Rect(x:Int, y:Int, w:Int, h:Int)
+  case class Line(x1:Int, y1:Int, x2:Int, y2:Int)
+  case class SinOsc(f:Int)
+  env = env.addForeignFunc("rect") {
+    case Seq(EntInt(x), EntInt(y), EntInt(w), EntInt(h))
+        => Rect(x,y,w,h) }
+  env = env.addForeignFunc("line") {
+    case Seq(EntInt(x), EntInt(y), EntInt(w), EntInt(h))
+        => Line(x,y,w,h)
+  }
+  env = env.addForeignFunc("sinOsc") { case Seq(EntInt(f)) => SinOsc(f) }
+
+  val picoVM = new PicoVM(env)
   val picoEditorStage = new Stage{
     title = "pico editor"
-    scene = new PicoEditor(Environment()) 
+    scene = new Scene(){ content = new PicoTextEditor(picoVM) } 
   }
   picoEditorStage.show()
+
+  val picoValueTableStage = new Stage{
+    title = "value table"
+    scene = new Scene(){ content = new PicoValueTable(picoVM) }
+  }
+  picoValueTableStage.show()
 
 }

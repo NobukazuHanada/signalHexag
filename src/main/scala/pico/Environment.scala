@@ -18,15 +18,15 @@ object Environment {
 }
 
 
-class Environment private (val varialbeMap: Map[Pico.PicoSymbol, Runner.Entity]) {
+class Environment private (val variableMap: Map[Pico.PicoSymbol, Runner.Entity]) {
   import Pico._
   import Runner._
 
   def get(symbol:PicoSymbol) : Option[Entity] =
-    varialbeMap.get(symbol)
+    variableMap.get(symbol)
 
   def +(cell:(PicoSymbol, Entity)) : Environment =
-    Environment(varialbeMap + cell)
+    Environment(variableMap + cell)
 
   def addForeignFunc[F](name:String)(f:Seq[Entity] => F): Environment =
     this + (PicoSymbol(name) -> EntForeignFunc(f))

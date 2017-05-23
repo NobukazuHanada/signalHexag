@@ -88,12 +88,12 @@ object Runner {
             }
           case EntForeignFunc(f) =>
             entities flatMap {
-              entities => 
+              case entities => 
               val foreignValue = f(entities);
               (EntForeignValue(foreignValue), env).toResult
             }
           case _ =>
-            VMError("Apply Error")
+            VMError(s"Apply Error funcEntity:$func entities:$entities" )
         }
     }
 

@@ -12,7 +12,21 @@ class PicoVM(env: Environment) {
   private var _ast: PicoSentence = PicoSentence()
   private var _env: Environment = env
 
+  private var envEvents : List[Environment => Boolean] = List[Environment => Boolean]()
+
+  def addFireEnvEvent(f: Environment => Boolean) = {
+    envEvents :+= f
+  }
+
+  private def fireEnvEvents() : Boolean = {
+    for( envEvent <- envEvents ){
+      envEvent(_env)
+    }
+    true
+  }
+
   def text: String = _text
+  def getEnv: Environment = _env
   def text_=(input:String) =
   if( _text != input ) {
     _text = input
@@ -21,8 +35,11 @@ class PicoVM(env: Environment) {
         _ast = ast
         _text = UnParser.unparse(ast)
         Runner.run(ast) match {
-          case Success((_, env:Environment)) => _env = env
-          case _ => 
+          case Success((_, env:Environment)) =>
+            _env = env
+            fireEnvEvents()
+          case err =>
+            println(err)
         }
       case _ => 
     }
@@ -32,7 +49,9 @@ class PicoVM(env: Environment) {
   if(ast != _ast){
     _text = UnParser.unparse(ast)
     Runner.run(ast) match {
-      case Success((_, env:Environment)) => _env = env
+      case Success((_, env:Environment)) =>
+        _env = env
+        fireEnvEvents()
       case _ =>
     }
   }

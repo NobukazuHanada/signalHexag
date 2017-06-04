@@ -27,6 +27,7 @@ class PicoVM(env: Environment) {
 
   def text: String = _text
   def getEnv: Environment = _env
+  def ast: PicoSentence = _ast
   def text_=(input:String) =
   if( _text != input ) {
     _text = input

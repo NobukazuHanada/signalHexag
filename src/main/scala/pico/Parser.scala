@@ -12,7 +12,7 @@ object PicoParser {
     parseAll(psentence, input) match {
       case Success(result, next) => psentenceToPicoSentence(result)
       case NoSuccess(msg, next) => ReadError(msg)
-    }
+   }
   }
 
   def psentenceToPicoSentence(expr:PSentence) : Result[PicoSentence] =

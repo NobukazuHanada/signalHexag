@@ -26,7 +26,7 @@ object UnParser {
       case PicoTrue => "true"
       case PicoFalse => "false"
       case PicoList(list @ _*) =>
-        list map { unparseExpr(_, indentLevel) } mkString("[",",","]")
+        list map { unparseExpr(_, indentLevel) } mkString("["," ","]")
       case PicoLambda(PicoArgs(args @ _*), expr) =>
         val argsText = args map { case PicoSymbol(name) => name } mkString("("," ",")")
         s"(lambda $argsText ${unparseExpr(expr, indentLevel)})"
@@ -37,8 +37,8 @@ object UnParser {
         s"(define ($name $argsText)${indenting(indentLevel)}${unparseExpr(expr, indentLevel + 1)})"
       case PicoIf(cond, thn, els) =>
         els match {
-          case Some(els) => s"(if $cond\n $thn\n $els)"
-          case None => s"(if $cond\n $thn)"
+          case Some(els) => s"(if ${unparseExpr(cond,indentLevel)}${indenting(indentLevel)}${unparseExpr(thn, indentLevel)}${indenting(indentLevel)}${unparseExpr(els, indentLevel)})"
+          case None => s"(if ${unparseExpr(cond,indentLevel)}${indenting(indentLevel)}${unparseExpr(thn, indentLevel)})"
         }
       case PicoLet(bindingMap, expr @ _*) =>
         val bindingMapText = bindingMap match {

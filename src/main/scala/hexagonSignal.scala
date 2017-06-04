@@ -157,4 +157,10 @@ object Main extends JFXApp {
   }
   picoValueTableStage.show()
 
+  val picoASTEditorStage = new Stage{
+    title = "AST Stage"
+    import hexasignal.pico.editor.PicoASTEditor
+    scene= new Scene(){ content = new PicoASTEditor(picoVM) }
+  }
+  picoASTEditorStage.show()
 }

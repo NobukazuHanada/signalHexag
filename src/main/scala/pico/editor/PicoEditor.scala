@@ -7,10 +7,11 @@ import scalafx.scene.control.TextArea
 import scalafx.scene.input.{KeyEvent, KeyCode}
 import hexasignal.pico.PicoVM
 
-
 class PicoTextEditor(val vm: PicoVM) extends TextArea("") {
   self =>
   vm.text = text()
+  
+  minHeight = 600
 
   handleEvent(KeyEvent.KeyPressed) {
     (event: KeyEvent) =>
@@ -48,7 +49,8 @@ object PicoValueTable {
   class PicoValueTable(val vm: PicoVM) extends TableView[ValueMap](
     ObservableBuffer[ValueMap](vm.getEnv.variableMap.toList:_*)
   ) {
-    minWidth = 500
+    minWidth = 1000
+    minHeight = 700
     columns ++= List(new SymbolTableColumn(), new ValueTableColumn())
     vm.addFireEnvEvent {
       env =>
@@ -58,4 +60,3 @@ object PicoValueTable {
     }
   }
 }
-

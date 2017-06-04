@@ -1,9 +1,8 @@
 package hexasignal.pico
 
 object Pico {
-
   case class PicoSentence(expr:PicoExpr*)
-  sealed class PicoExpr 
+  sealed class PicoExpr
   case class PicoInt(n:Int) extends PicoExpr
   case class PicoFloat(f:Float) extends PicoExpr
   case class PicoString(s:String) extends PicoExpr
@@ -40,3 +39,4 @@ object Pico {
   case object PFalse extends PBool
 
 }
+

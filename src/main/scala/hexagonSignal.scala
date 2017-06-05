@@ -131,6 +131,7 @@ object Main extends JFXApp {
   import hexasignal.pico.PicoVM
   import hexasignal.pico.Runner._
   import hexasignal.pico.Environment
+  import hexasignal.pico.library.Standard
   var env = Environment()
   case class Rect(x:Int, y:Int, w:Int, h:Int)
   case class Line(x1:Int, y1:Int, x2:Int, y2:Int)
@@ -143,6 +144,12 @@ object Main extends JFXApp {
         => Line(x,y,w,h)
   }
   env = env.addForeignFunc("sinOsc") { case Seq(EntInt(f)) => SinOsc(f) }
+  env = env.addForeignFunc("+")(Standard.add)
+  env = env.addForeignFunc("-")(Standard.sub)
+  env = env.addForeignFunc("*")(Standard.mul)
+  env = env.addForeignFunc("/")(Standard.div)
+  env = env.addForeignFunc("=")(Standard.eq)
+  env = env.addForeignFunc("not")(Standard.not)
 
   val picoVM = new PicoVM(env)
   val picoEditorStage = new Stage{

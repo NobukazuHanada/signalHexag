@@ -14,11 +14,17 @@ class PicoASTEditor(val vm: PicoVM) extends Canvas {
   height = 600
 
   object Node{
+    import scala.math._
     val centerX = width() / 2
     val centerY = height() / 2
     var numOfAllNodes = 0
     var radius = width() / 2 - 10
     var maxLevel = 0
+    var position = 0
+    var minAngle =  Pi / 90
+    var maxAngle =  Pi / 10
+    var counterOfCreatedAngle = 0
+    var currentAngle : Double = 0
     import scala.collection.mutable.Map
     val numOfNodesInLevel : Map[Int, Int] = Map()
 
@@ -29,11 +35,26 @@ class PicoASTEditor(val vm: PicoVM) extends Canvas {
         case None =>  numOfNodesInLevel(level) = 1
       }
       if( maxLevel < level ) maxLevel = level
-      new Node(ast, level, numOfNodesInLevel(level)){
+      val node = new Node(ast, level, position){
         val parent = _parent
       }
+      if( node.children.isEmpty ){
+        position += 1
+      }
+      node
     }
 
+    def reset : Unit = {
+      numOfAllNodes = 0
+      radius = width() / 2 - 10
+      maxLevel = 0
+      position = 0
+      minAngle =  Pi / 90
+      maxAngle =  Pi / 10
+      counterOfCreatedAngle = 0
+      currentAngle = 0
+      numOfNodesInLevel.clear()
+    }
 
   }
 
@@ -45,20 +66,61 @@ class PicoASTEditor(val vm: PicoVM) extends Canvas {
     import Node._
     import scala.math._
 
+
+    
     def nodeRadius = (radius / maxLevel) * level
-    def x = centerX + nodeRadius * sin(2.0 * Pi * pos/numOfNodesInLevel(level))
-    def y = centerY + nodeRadius * cos(2.0 * Pi * pos/numOfNodesInLevel(level))
+    def x = centerX + nodeRadius * sin(angle)
+    def y = centerY + nodeRadius * cos(angle) 
     val w = 5.0
     val h = 5.0
+    val text : String =
+      ast match {
+        case PicoInt(i) => i.toString()
+        case PicoFloat(f) => f.toString()
+        case PicoString(s) => '"' + s + '"'
+        case PicoSymbol(s) => s
+        case PicoTrue => "true"
+        case PicoFalse => "false"
+        case PicoList(_ @ _*) => "list"
+        case PicoLambda(_, _) => "lambda"
+        case PicoDefine(_,_) => "defar"
+        case PicoDefineLambda(_,_, _) => "defun"
+        case PicoIf(_,_,_) => "if"
+        case PicoLet(_,_ @_*) => "let"
+        case PicoApply(_,_ @_*) => "apply"
+        case a =>
+          println(a)
+          a.toString()
+      }
+
+
+   
+    def angle : Double = {
+      if( children.isEmpty ){
+        if( numOfNodesInLevel(1) < 3  ){ 
+          pos * Pi / (position * 2)
+        }else if( numOfNodesInLevel(1) < 5 ) {
+          pos * Pi / position
+        }else{
+          2 * pos * Pi / position
+        }
+      }else{
+        val childrenAngles = children.map(_.angle)
+        val intervalAngleOfChildren = childrenAngles.max - childrenAngles.min
+        childrenAngles.min + intervalAngleOfChildren / 2
+      }
+    }
 
     def draw(gc: GraphicsContext) : Unit = {
       var nodeRadius = (radius / maxLevel) * level
+      gc.stroke = Color(1,1,1,0.5)
       gc.strokeRect(x - w/2,y - h/2,w,h)
-      gc.strokeText(ast.toString(),x-w/2, y-h/2)
       parent match {
         case Root => gc.strokeLine(x , y, centerX, centerY)
         case node:Node => gc.strokeLine(x, y, node.x, node.y)
       }
+      gc.stroke = Color(1,1,1,1)
+      gc.strokeText(text,x-w/2, y-h/2)
       children.foreach(_.draw(gc))
     }
 
@@ -101,6 +163,7 @@ class PicoASTEditor(val vm: PicoVM) extends Canvas {
 
   vm.addFireEnvEvent {
     env =>
+    Node.reset
     draw
     true
   }
@@ -116,6 +179,7 @@ class PicoASTEditor(val vm: PicoVM) extends Canvas {
     gc.fillRect(0, 0, width(), height())
     gc.setStroke(Color.White)
     gc.strokeRect(width()/2 - 5, height()/2 - 5, 10, 10)
+    gc.strokeText("ROOT", width()/2, height()/2)
     for(node <- nodes){
       node.draw(gc)
     }

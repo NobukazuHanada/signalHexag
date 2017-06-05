@@ -4,6 +4,7 @@ package hexasignal.pico
 object Environment {
   import Pico._
   import Runner._
+  
   def apply() : Environment = new Environment(Map[PicoSymbol, Entity]())
 
   def apply(maps:(PicoSymbol, Entity)*) : Environment = {

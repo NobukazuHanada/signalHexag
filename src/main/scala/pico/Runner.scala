@@ -16,7 +16,7 @@ object Runner {
   case object EntFalse extends EntValue
   case class EntSymbol(name:String) extends EntValue
   case class EntList(values:Entity*) extends EntValue
-  case class EntLambda(args:PicoArgs, expr:PicoExpr, env: Environment) extends EntValue
+  case class EntLambda(args:PicoArgs, expr:PicoExpr, env: Environment, name: Option[String]) extends EntValue
   case class EntForeignValue[F](f:F) extends EntValue
   case class EntForeignFunc[F](f: Seq[Entity] => F) extends EntValue
 
@@ -51,11 +51,11 @@ object Runner {
         val entValues = ( list map { elm => runExpr(elm, env) map (_._1) } ).toResultSeq
         entValues.map { (values) => (EntList(values:_*), env) }
       case PicoLambda(args, expr) =>
-        (EntLambda(args, expr, env), env).toResult
+        (EntLambda(args, expr, env, None), env).toResult
       case PicoDefine(name, expr) =>
         runExpr(expr, env) map { case (entity, env) => (Empty, env + (PicoSymbol(name) -> entity)) }
       case PicoDefineLambda(name, args, expr) =>
-        val entLambda = EntLambda(args, expr, env)
+        val entLambda = EntLambda(args, expr, env, Some(name))
         (entLambda, env + (PicoSymbol(name) -> entLambda)).toResult
       case PicoIf(cond, thn, els) =>
         runExpr(cond, env) map (_._1) flatMap {
@@ -77,10 +77,14 @@ object Runner {
         val func = runExpr(funcExpr, env) map (_._1)
         val entities = (expr map { runExpr(_, env) map (_._1) }).toResultSeq
         func flatMap {
-          case EntLambda(PicoArgs(args @_*), expr, env) =>
+          case lambda@EntLambda(PicoArgs(args @_*), expr, env, name) =>
             entities flatMap {
               entities => 
-              var newEnv = env
+              var newEnv = name match {
+                case Some(name) =>
+                  env + (PicoSymbol(name) -> lambda)
+                case None => env
+              }
               for((symbol, value) <- args.zip(entities)){
                 newEnv += symbol -> value
               }
@@ -89,8 +93,12 @@ object Runner {
           case EntForeignFunc(f) =>
             entities flatMap {
               case entities => 
-              val foreignValue = f(entities);
-              (EntForeignValue(foreignValue), env).toResult
+                f(entities) match {
+                  case entValue:EntValue => (entValue, env).toResult
+                  case foreignValue =>
+                    (EntForeignValue(foreignValue), env).toResult
+                }
+              
             }
           case _ =>
             VMError(s"Apply Error funcEntity:$func entities:$entities" )

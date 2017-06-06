@@ -3,6 +3,7 @@ package hexasignal.pico
 import org.scalatest.FunSuite
 
 class RunnerVMSuite extends FunSuite {
+  import Pico._
   import PicoParser.parse
   import Runner._
   import Result._
@@ -25,4 +26,32 @@ class RunnerVMSuite extends FunSuite {
       }
     assert(Runner.run(ast).map(_._1) == EntForeignValue(Rect(1,2,3,4)).toResult)
   }
+
+  test("use define") {
+    val input =
+      """(define x
+ 1)"""
+    val Success(ast) = parse(input)
+    implicit val environment = Environment()
+    val Success((result, env)) = Runner.run(ast)
+    assert(result == EntInt(1))
+    assert(env.variableMap ==
+             Map(PicoSymbol("x") -> EntInt(1))
+    )
+  }
+
+  test("use lambda") {
+    val input = """(define func (lambda (a b) [a b]))
+
+(define result (func 1 2))
+
+"""
+
+    val Success(ast) = parse(input)
+    implicit val environment = Environment()
+    val Success((result, env)) = Runner.run(ast)
+
+    assert(result == EntList(EntInt(1), EntInt(2)))
+  }
+
 }

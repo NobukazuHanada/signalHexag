@@ -1,5 +1,6 @@
 package hexasignal.pico
 
+import scala.collection.immutable.MapLike
 
 object Environment {
   import Pico._
@@ -29,6 +30,7 @@ class Environment private (val variableMap: Map[Pico.PicoSymbol, Runner.Entity])
   def +(cell:(PicoSymbol, Entity)) : Environment =
     Environment(variableMap + cell)
 
-  def addForeignFunc[F](name:String)(f:Seq[Entity] => F): Environment =
+  def addForeignFunc[F](name:String)(f:PartialFunction[Seq[Entity], F]): Environment =
     this + (PicoSymbol(name) -> EntForeignFunc(f))
+
 }

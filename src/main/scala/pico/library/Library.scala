@@ -5,7 +5,7 @@ import Runner._
 
 object Standard {
 
-  val add : Seq[Entity] => EntValue =
+  val add : PartialFunction[Seq[Entity], EntValue] =
     {
       case Seq(EntInt(i1), EntInt(i2)) => EntInt(i1 + i2)
       case Seq(EntFloat(f1), EntFloat(f2)) => EntFloat(f1 + f2)
@@ -14,7 +14,7 @@ object Standard {
        add(add(Seq(first, second)) +: rest) 
     }
 
-  val sub : Seq[Entity] => EntValue =
+  val sub : PartialFunction[Seq[Entity], EntValue] =
   {
     case Seq(EntInt(i1), EntInt(i2)) => EntInt(i1 - i2)
     case Seq(EntFloat(f1), EntFloat(f2)) => EntFloat(f1 - f2)
@@ -23,7 +23,7 @@ object Standard {
   }
 
 
-  val mul : Seq[Entity] => EntValue =
+  val mul : PartialFunction[Seq[Entity], EntValue] =
   {
     case Seq(EntInt(i1), EntInt(i2)) => EntInt(i1 * i2)
     case Seq(EntFloat(f1), EntFloat(f2)) => EntFloat(f1 * f2)
@@ -32,7 +32,7 @@ object Standard {
   }
 
 
-  val div : Seq[Entity] => EntValue =
+  val div : PartialFunction[Seq[Entity], EntValue] =
   {
     case Seq(EntInt(i1), EntInt(i2)) => EntInt(i1 / i2)
     case Seq(EntFloat(f1), EntFloat(f2)) => EntFloat(f1 / f2)
@@ -40,9 +40,8 @@ object Standard {
       div(eq(Seq(first, second)) +: rest)
   }
 
-  val eq : Seq[Entity] => EntValue =
+  val eq : PartialFunction[Seq[Entity], EntValue] =
   {
-
     case Seq(a, b) => if( a == b ) EntTrue else EntFalse
     case Seq(first, second, rest @ _*) =>
       if( first == second )
@@ -51,9 +50,25 @@ object Standard {
         EntFalse
   }
 
-  val not : Seq[Entity] => EntValue = {
+  val not : PartialFunction[Seq[Entity], EntValue] = {
     case Seq(EntTrue) => EntFalse
     case Seq(EntFalse) => EntTrue
+  }
+
+  val first : PartialFunction[Seq[Entity], Entity] = {
+    case Seq(EntList(list @ _*)) =>
+      list.head
+  }
+
+
+  val rest : PartialFunction[Seq[Entity], Entity] = {
+    case Seq(EntList(list @ _*)) =>
+      EntList(list.drop(1):_*)
+  }
+
+  val cons : PartialFunction[Seq[Entity], Entity] = {
+    case Seq(a, EntList(list@_*)) =>
+      EntList(a +: list:_*)
   }
 
 }

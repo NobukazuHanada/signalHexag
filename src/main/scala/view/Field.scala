@@ -7,7 +7,7 @@ import scalafx.scene.input.{MouseEvent, MouseButton, MouseDragEvent}
 import MouseButton.{Primary, Secondary}
 import akka.actor.{Actor, ActorRef, Props,  ActorSystem}
 import hexasignal.model.ViewData
-import hexasignal.model.IDGenerator.Id
+import hexasignal.Id
 import akka.pattern.{ask}
 import akka.util.Timeout
 import scala.concurrent.Future

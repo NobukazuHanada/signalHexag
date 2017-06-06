@@ -27,14 +27,18 @@ object UnParser {
       case PicoFalse => "false"
       case PicoList(list @ _*) =>
         list map { unparseExpr(_, indentLevel) } mkString("["," ","]")
-      case PicoLambda(PicoArgs(args @ _*), expr) =>
-        val argsText = args map { case PicoSymbol(name) => name } mkString("("," ",")")
-        s"(lambda $argsText ${unparseExpr(expr, indentLevel)})"
-      case PicoDefine(name:String, expr:PicoExpr) =>
-        s"(define $name${indenting(indentLevel)}${unparseExpr(expr, indentLevel+1)})"
-      case PicoDefineLambda(name, PicoArgs(args @ _*) ,expr) =>
-        val argsText = args map { case PicoSymbol(name) => name } mkString " "
-        s"(define ($name $argsText)${indenting(indentLevel)}${unparseExpr(expr, indentLevel + 1)})"
+      case PicoLambda(PicoArgs(args @ _*), exprs @ _*) =>
+        exprs map { expr =>
+          val argsText = args map { case PicoSymbol(name) => name } mkString("("," ",")")
+          s"(lambda $argsText ${unparseExpr(expr, indentLevel)})"
+        } mkString indenting(indentLevel)
+      case PicoDefine(name:String, exprs @_* ) =>
+        val exprString = exprs.map(unparseExpr(_, indentLevel+1)) mkString indenting(indentLevel)
+        s"(define $name${indenting(indentLevel)}$exprString)"
+      case PicoDefineLambda(name, PicoArgs(args @ _*) ,exprs @ _*) =>
+        val headText = s"($name ${(args map { case PicoSymbol(name) => name } mkString " ")})"
+        val exprString = exprs.map(unparseExpr(_, indentLevel+1)) mkString indenting(indentLevel) 
+        s"(define $headText${indenting(indentLevel)}$exprString)"
       case PicoIf(cond, thn, els) =>
         els match {
           case Some(els) => s"(if ${unparseExpr(cond,indentLevel)}${indenting(indentLevel)}${unparseExpr(thn, indentLevel)}${indenting(indentLevel)}${unparseExpr(els, indentLevel)})"

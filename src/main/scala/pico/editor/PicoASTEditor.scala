@@ -82,9 +82,9 @@ class PicoASTEditor(val vm: PicoVM) extends Canvas {
         case PicoTrue => "true"
         case PicoFalse => "false"
         case PicoList(_ @ _*) => "list"
-        case PicoLambda(_, _) => "lambda"
-        case PicoDefine(_,_) => "defar"
-        case PicoDefineLambda(_,_, _) => "defun"
+        case PicoLambda(_, _ @ _*) => "lambda"
+        case PicoDefine(_,_ @ _*) => "defar"
+        case PicoDefineLambda(_,_, _ @ _*) => "defun"
         case PicoIf(_,_,_) => "if"
         case PicoLet(_,_ @_*) => "let"
         case PicoApply(_,_ @_*) => "apply"
@@ -135,12 +135,12 @@ class PicoASTEditor(val vm: PicoVM) extends Canvas {
           List()
         case picoList@PicoList(exprs @_*) =>
           exprs.map(expr=>Node(expr, level + 1, this))
-        case picoLambda@PicoLambda(PicoArgs(args @_*), expr) =>
-          args.map(Node(_, level + 1, this)) :+ Node(expr, level + 1, this)
-        case picoDefine@PicoDefine(name:String, expr) =>
-         List(Node(PicoSymbol(name), level + 1, this), Node(expr, level + 1, this))
-        case picoDefineLambda@PicoDefineLambda(name:String, PicoArgs(args @ _*), expr) =>
-         Node(PicoSymbol(name),level+1, this) +: args.map(Node(_, level+1, this)) :+ Node(expr, level+1, this)
+        case picoLambda@PicoLambda(PicoArgs(args @_*), exprs @ _*) =>
+          args.map(Node(_, level + 1, this)) ++ exprs.map(Node(_, level + 1, this))
+        case picoDefine@PicoDefine(name:String, exprs @ _*) =>
+         Node(PicoSymbol(name), level + 1, this) +: exprs.map(Node(_, level + 1, this))
+        case picoDefineLambda@PicoDefineLambda(name:String, PicoArgs(args @ _*), exprs @ _*) =>
+         Node(PicoSymbol(name),level+1, this) +: (args.map(Node(_, level+1, this)) ++ exprs.map(Node(_, level + 1, this)))
         case picoIf@PicoIf(cond, thn, None) =>
           List(Node(cond,level+1, this), Node(thn,level+1, this))
         case picoIf@PicoIf(cond,thn,Some(els)) =>

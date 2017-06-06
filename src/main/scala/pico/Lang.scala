@@ -3,16 +3,19 @@ package hexasignal.pico
 object Pico {
   case class PicoSentence(expr:PicoExpr*)
   sealed class PicoExpr
-  case class PicoInt(n:Int) extends PicoExpr
-  case class PicoFloat(f:Float) extends PicoExpr
+
+  sealed abstract class PicoNumber extends PicoExpr
+  sealed abstract class PicoBool extends PicoExpr
+  case class PicoInt(n:Int) extends PicoNumber
+  case class PicoFloat(f:Float) extends PicoNumber
   case class PicoString(s:String) extends PicoExpr
   case class PicoSymbol(name:String) extends PicoExpr
-  case object PicoTrue extends PicoExpr
-  case object PicoFalse extends PicoExpr
+  case object PicoTrue extends PicoBool
+  case object PicoFalse extends PicoBool
   case class PicoList(list:PicoExpr*) extends PicoExpr
-  case class PicoLambda(args:PicoArgs, expr:PicoExpr) extends PicoExpr
-  case class PicoDefine(name:String, expr:PicoExpr) extends PicoExpr
-  case class PicoDefineLambda(name:String, args:PicoArgs, expr:PicoExpr) extends PicoExpr
+  case class PicoLambda(args:PicoArgs, expr:PicoExpr*) extends PicoExpr
+  case class PicoDefine(name:String, expr:PicoExpr*) extends PicoExpr
+  case class PicoDefineLambda(name:String, args:PicoArgs, expr:PicoExpr*) extends PicoExpr
   case class PicoIf(cond:PicoExpr, thn:PicoExpr, els:Option[PicoExpr]) extends PicoExpr
   case class PicoLet(pico:BindingMap, expr:PicoExpr*) extends PicoExpr
   case class PicoApply(pico:PicoExpr, expr:PicoExpr*) extends PicoExpr

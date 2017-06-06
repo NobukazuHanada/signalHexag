@@ -116,15 +116,15 @@ object Main extends JFXApp {
     val future = askLoop
   }
 
-  viewStage.show()
-  viewStage.toFront()
+  //  viewStage.show()
+  // viewStage.toFront()
 
   val viewModelEditorStage = new Stage{
     val vme = new ViewModelEditor(viewModel);
     scene = vme
   }
 
-  viewModelEditorStage.show();
+  //viewModelEditorStage.show();
 
   import hexasignal.pico.editor.PicoTextEditor
   import hexasignal.pico.editor.PicoValueTable.PicoValueTable
@@ -132,6 +132,19 @@ object Main extends JFXApp {
   import hexasignal.pico.Runner._
   import hexasignal.pico.Environment
   import hexasignal.pico.library.Standard
+  import hexasignal.graphics.GraphicFunctions
+  import hexasignal.graphics.Drawer
+  import hexasignal.graphics.Renderer
+  val renderer = new Renderer()
+  val rendererStage = new Stage {
+    width = 500
+    height = 500
+    title = "renderer Stage"
+    scene = renderer
+  }
+  rendererStage.show
+  val drawer = new Drawer(renderer.gc)
+
   var env = Environment()
   case class Rect(x:Int, y:Int, w:Int, h:Int)
   case class Line(x1:Int, y1:Int, x2:Int, y2:Int)
@@ -150,6 +163,16 @@ object Main extends JFXApp {
   env = env.addForeignFunc("/")(Standard.div)
   env = env.addForeignFunc("=")(Standard.eq)
   env = env.addForeignFunc("not")(Standard.not)
+  env = env.addForeignFunc("first")(Standard.first)
+  env = env.addForeignFunc("rect")(Standard.rest)
+  env = env.addForeignFunc("cons")(Standard.cons)
+  env = env.addForeignFunc("rect")(GraphicFunctions.rect)
+  env = env.addForeignFunc("line")(GraphicFunctions.line)
+  env = env.addForeignFunc("oval")(GraphicFunctions.oval)
+  env = env.addForeignFunc("group")(GraphicFunctions.group)
+  env = env.addForeignFunc("rgba")(GraphicFunctions.rgba)
+  env = env.addForeignFunc("hsba")(GraphicFunctions.hsba)
+  env = env.addForeignFunc("draw")(drawer.draw)
 
   val picoVM = new PicoVM(env)
   val picoEditorStage = new Stage{

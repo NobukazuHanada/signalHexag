@@ -7,8 +7,8 @@ import scalafx.scene.input.MouseEvent
 import scalafx.scene.shape.Shape
 import akka.actor.{ActorSystem, Props, Actor, ActorRef}
 import hexasignal.model.{ViewData, Rect}
-import hexasignal.model.IDGenerator
-import hexasignal.model.IDGenerator.Id
+import hexasignal.IDGenerator
+import hexasignal.Id
 import hexasignal.shape.Hexagon
 import hexasignal.shape.Hexagon.polygon
 import scala.concurrent.Future

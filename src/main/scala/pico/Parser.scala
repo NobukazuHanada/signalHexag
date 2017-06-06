@@ -9,9 +9,10 @@ object PicoParser {
 
   def parse(input:String) : Result[PicoSentence] = {
     import PicoReader._
-    parseAll(psentence, input) match {
+    PicoReader.parse(psentence, input) match {
       case Success(result, next) => psentenceToPicoSentence(result)
-      case NoSuccess(msg, next) => ReadError(msg)
+      case NoSuccess(msg, next) =>
+        ReadError(msg)
    }
   }
 
@@ -41,18 +42,18 @@ object PicoParser {
             case error:Error => error
           }
         } map { PicoList(_:_*) }  
-      case ParList(PSymbol("lambda"), ParList(args @_*), expr) =>
+      case ParList(PSymbol("lambda"), ParList(args @_*), expr @ _*) =>
         for{
           a <- parlistArgsToPicoArgs(args.toList)
-          e <- pexprToPicoExpr(expr)
-        }  yield PicoLambda(a, e)
-      case ParList(PSymbol("define"),PSymbol(name), expr) =>
-        pexprToPicoExpr(expr) map { PicoDefine(name, _) }
-      case ParList(PSymbol("define"), ParList(PSymbol(name), args @ _*), expr) =>
+          e <- (expr map pexprToPicoExpr).toResultSeq
+        } yield PicoLambda(a, e:_*)
+      case ParList(PSymbol("define"),PSymbol(name), expr @_*) =>
+        (expr map pexprToPicoExpr).toResultSeq map { PicoDefine(name, _:_*) }
+      case ParList(PSymbol("define"), ParList(PSymbol(name), args @ _*), expr @ _*) =>
         for{
           a <- parlistArgsToPicoArgs(args.toList)
-          e <- pexprToPicoExpr(expr)
-        }  yield PicoDefineLambda(name, a, e)
+          e <- (expr map pexprToPicoExpr).toResultSeq
+        }  yield PicoDefineLambda(name, a, e :_*)
       case ParList(PSymbol("if"),cond, thn) =>
         for{ c <- pexprToPicoExpr(cond)
              t <- pexprToPicoExpr(thn)

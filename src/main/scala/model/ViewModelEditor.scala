@@ -6,7 +6,8 @@ import scalafx.scene.Node
 import scalafx.scene.paint.Color
 import scalafx.scene.control.TextArea
 import scalafx.scene.input.{KeyEvent, KeyCode}
-import IDGenerator.Id
+import hexasignal.IDGenerator
+import hexasignal.Id
 
 class ViewModelEditor(val model : ViewModel) extends Scene with Watcher{
   val textArea = new TextArea("") {

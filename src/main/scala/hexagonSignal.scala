@@ -11,29 +11,13 @@ import scalafx.scene.shape.Sphere
 import scalafx.scene.PerspectiveCamera
 import scalafx.scene.paint.Color._
 import scalafx.stage.WindowEvent
+import scalafx.scene.input.MouseEvent
 import hexasignal.view.PlacingField
 import hexasignal.view.Field
-import de.sciss.synth._
-import ugen._
-import Ops._
+import hexasignal.sound.Sound
 
-/*
-import akka.actor.{Actor}
-import akka.event.Logging
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class MyActor extends Actor {
-  val log = Logging(context.system, this)
-  var stage2 : Stage = null
-
-  def receive = {
-    case "window" =>
-    case "test" =>
-      log.info("info test")
-    case _ => log.info("received unknown message")
-  }
-}
- */
- 
 
 object Main extends JFXApp {
   val field = new PlacingField()
@@ -56,25 +40,16 @@ object Main extends JFXApp {
         translateY = 10
       }
       import scalafx.stage.WindowEvent
+
       handleEvent(WindowEvent.WindowCloseRequest) {
         (event:WindowEvent) =>
-        val future = Field.terminate
+        val future = for {
+          _ <- Sound.quit
+          f <- Field.terminate
+        } yield f
       }
     }
   }
-
-
-  /*val cfg = Server.Config()
-  cfg.program = "/Applications/SuperCollider/SuperCollider.app/Contents/Resources/scsynth"
-
-  Server.run(cfg) { s =>
-    val sin = SynthDef("Sin") {
-      val f1 = "freq1".kr(100)
-      SinOsc.ar(f1)
-    }
-
-    
-   }*/
 
 
   import hexasignal.model.{ViewModel, ViewModelRenderer
@@ -135,6 +110,7 @@ object Main extends JFXApp {
   import hexasignal.graphics.GraphicFunctions
   import hexasignal.graphics.Drawer
   import hexasignal.graphics.Renderer
+  import hexasignal.pico.editor.PicoASTEditor
   val renderer = new Renderer()
   val rendererStage = new Stage {
     width = 500
@@ -164,7 +140,7 @@ object Main extends JFXApp {
   env = env.addForeignFunc("=")(Standard.eq)
   env = env.addForeignFunc("not")(Standard.not)
   env = env.addForeignFunc("first")(Standard.first)
-  env = env.addForeignFunc("rect")(Standard.rest)
+  env = env.addForeignFunc("rest")(Standard.rest)
   env = env.addForeignFunc("cons")(Standard.cons)
   env = env.addForeignFunc("rect")(GraphicFunctions.rect)
   env = env.addForeignFunc("line")(GraphicFunctions.line)
@@ -173,11 +149,20 @@ object Main extends JFXApp {
   env = env.addForeignFunc("rgba")(GraphicFunctions.rgba)
   env = env.addForeignFunc("hsba")(GraphicFunctions.hsba)
   env = env.addForeignFunc("draw")(drawer.draw)
+  env = env.addForeignFunc("sinOsc")(Sound.sinOsc)
+  env = env.addForeignFunc("play")(Sound.play)
 
   val picoVM = new PicoVM(env)
   val picoEditorStage = new Stage{
     title = "pico editor"
-    scene = new Scene(){ content = new PicoTextEditor(picoVM) } 
+    scene = new Scene(){
+      content = new HBox() {
+        children = Seq(
+          new PicoTextEditor(picoVM),
+          new PicoASTEditor(picoVM)
+        )
+      }
+    }
   }
   picoEditorStage.show()
 
@@ -186,11 +171,4 @@ object Main extends JFXApp {
     scene = new Scene(){ content = new PicoValueTable(picoVM) }
   }
   picoValueTableStage.show()
-
-  val picoASTEditorStage = new Stage{
-    title = "AST Stage"
-    import hexasignal.pico.editor.PicoASTEditor
-    scene= new Scene(){ content = new PicoASTEditor(picoVM) }
-  }
-  picoASTEditorStage.show()
 }

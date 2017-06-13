@@ -28,9 +28,8 @@ object Field {
     yield actorRef
   }
 
-  def terminate {
+  def terminate = 
     actorSystem.terminate()
-  }
 }
 
 class FieldActor extends Actor {

@@ -31,10 +31,10 @@ class PicoVM(env: Environment) {
   def text_=(input:String) =
   if( _text != input ) {
     _text = input
-    PicoParser.parse(input) match {
-      case Success(ast) =>
+    PicoParser.getASTandRestTextFrom(input) match {
+      case Success((ast, restText)) =>
         _ast = ast
-        _text = UnParser.unparse(ast)
+        _text = UnParser.unparse(ast) + restText
         Runner.run(ast) match {
           case Success((_, env:Environment)) =>
             _env = env

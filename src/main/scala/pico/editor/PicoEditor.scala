@@ -10,6 +10,7 @@ import hexasignal.pico.PicoVM
 class PicoTextEditor(val vm: PicoVM) extends TextArea("") {
   self =>
   vm.text = text()
+
   
   minHeight = 600
 
@@ -24,7 +25,7 @@ class PicoTextEditor(val vm: PicoVM) extends TextArea("") {
 
 }
 
-import scalafx.scene.control.{TableView, TableColumn}
+import scalafx.scene.control.{TableView, TableColumn, TableCell}
 import scalafx.collections.ObservableBuffer
 import scalafx.beans.property.ObjectProperty
 import TableColumn._
@@ -37,12 +38,23 @@ object PicoValueTable {
 
   class SymbolTableColumn extends TableColumn[ValueMap, PicoSymbol] {
     text = "Variable Name"
-    cellValueFactory = { x => ObjectProperty(x.value._1) }
+    cellValueFactory = { x => ObjectProperty(x.value._1)}
+    cellFactory = { x =>
+      new TableCell[ValueMap, PicoSymbol](){
+        item.onChange { (_,_,symbol) =>
+          import scalafx.scene.control.Label
+          graphic = symbol match {
+            case PicoSymbol(s) => new Label(s)
+            case _ => null
+          }
+        }
+      }
+    }
   }
 
   class ValueTableColumn extends TableColumn[ValueMap, Entity] {
     text = "Value"
-    cellValueFactory = { x => ObjectProperty(x.value._2) }
+    cellValueFactory = { x => ObjectProperty(x.value._2)}
   }
 
 
@@ -51,10 +63,24 @@ object PicoValueTable {
   ) {
     minWidth = 1000
     minHeight = 700
+    
+    val valueMaps  : List[ValueMap] = vm.getEnv.variableMap.toList.filter { case (_, entity) =>
+      entity match {
+        case EntForeignFunc(_) => false
+        case _ => true
+      }
+    }
+    items = ObservableBuffer(valueMaps:_*)
+
     columns ++= List(new SymbolTableColumn(), new ValueTableColumn())
     vm.addFireEnvEvent {
       env =>
-      val valueMaps  : List[ValueMap] = env.variableMap.toList
+      val valueMaps  : List[ValueMap] = env.variableMap.toList.filter { case (_, entity) =>
+          entity match {
+            case EntForeignFunc(_) => false
+            case _ => true
+          }
+      }
       items = ObservableBuffer(valueMaps:_*)
       true
     }

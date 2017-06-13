@@ -10,10 +10,27 @@ object PicoParser {
   def parse(input:String) : Result[PicoSentence] = {
     import PicoReader._
     PicoReader.parse(psentence, input) match {
-      case Success(result, next) => psentenceToPicoSentence(result)
+      case Success(result, next) =>
+        psentenceToPicoSentence(result)
       case NoSuccess(msg, next) =>
         ReadError(msg)
    }
+  }
+
+  def getASTandRestTextFrom(input:String): Result[(PicoSentence, String)] = {
+    import PicoReader._
+    PicoReader.parse(psentence, input) match {
+      case Success(result, next) =>
+        var pos = next
+        var restText = ""
+        while(!pos.atEnd){
+          restText += pos.first
+          pos = pos.rest
+        }
+        psentenceToPicoSentence(result) map {(_,restText)}
+      case NoSuccess(msg, next) =>
+        ReadError(msg)
+    }
   }
 
   def psentenceToPicoSentence(expr:PSentence) : Result[PicoSentence] =

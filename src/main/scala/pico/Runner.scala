@@ -23,8 +23,8 @@ object Runner {
   case class EntInt(n:Int) extends EntNumber
   case class EntFloat(f:Float) extends EntNumber
   case class EntString(s:String) extends EntValue
-  case object EntTrue extends EntValue
-  case object EntFalse extends EntValue
+  case object EntTrue extends EntBool
+  case object EntFalse extends EntBool
   case class EntSymbol(name:String) extends EntValue
   case class EntList(values:Entity*) extends EntValue
   case class EntLambda(args:PicoArgs, expr:Seq[PicoExpr], env: Environment, name: Option[String]) extends EntValue

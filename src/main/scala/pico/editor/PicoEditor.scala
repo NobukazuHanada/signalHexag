@@ -14,13 +14,10 @@ class PicoTextEditor(val vm: PicoVM) extends TextArea("") {
   
   minHeight = 600
 
-  handleEvent(KeyEvent.KeyPressed) {
-    (event: KeyEvent) =>
-    if( event.code == KeyCode.Enter ){
-      vm.text = text()
-      text() = vm.text
-      self.positionCaret(vm.text.length())
-    }
+  def reload : Unit =  {
+    vm.text = text()
+    text() = vm.text
+    self.positionCaret(vm.text.length())
   }
 
 }

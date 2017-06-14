@@ -68,6 +68,7 @@ trait ConnectionNode[A <: ConnectView] extends FxNode {
 
 
 case class AddSender(sender:ActorRef)
+object Bang
 trait ActorController {
 
   val actor : Future[ActorRef]

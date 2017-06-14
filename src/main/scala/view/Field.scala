@@ -8,20 +8,27 @@ import MouseButton.{Primary, Secondary}
 import akka.actor.{Actor, ActorRef, Props,  ActorSystem}
 import hexasignal.model.ViewData
 import hexasignal.Id
+import hexasignal.graphics.EventReceiver
+import akka.actor.{ActorRef}
 import akka.pattern.{ask}
 import akka.util.Timeout
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 
-object Field {
+object Field extends  EventReceiver{
   val actorSystem = ActorSystem.create("syghexActorSystem")
   val actor = actorSystem.actorOf(Props[FieldActor])
+  var clickEventActors : List[ActorRef] = List[ActorRef]()
   implicit val timeout = new Timeout(5.seconds)
   
   case class CreateActor(props :Props)
   case class ActorOf(actorRef :ActorRef)
   case object GetCommands
+
+  def receiveEvent() {
+    clickEventActors.foreach(ask(_,MouseClicked))
+  }
 
   def createActor(props:Props) : Future[ActorRef] = {
     for(ActorOf(actorRef) <- (ask(actor, CreateActor(props))).mapTo[ActorOf])
@@ -83,24 +90,6 @@ class PlacingField extends Pane {
       }
     }
   }
-
-  def createRectMatcherNode(x : Double, y : Double) {
-    val node = new RectMatcherNode{
-      translateX = x
-      translateY = y
-    }
-    addNode(node)
-  }
-
-  def createRectRewriter(x : Double, y : Double) {
-    val node = new RectRewriteNode{
-      translateX = x
-      translateY = y
-    }
-    addNode(node)
-    node.addSender(Field.actor)
-  }
-
 
   def addNode(node: Node) {
     children.add(node)
@@ -165,5 +154,61 @@ class PlacingField extends Pane {
     }
   }
 
-}
+  handleEvent(MouseEvent.MouseClicked) {
+    (mouseEvent: MouseEvent) =>
+    if( mouseEvent.clickCount == 2) {
+      import scalafx.stage.Stage
+      import scalafx.scene.Scene
+      import scalafx.scene.layout.HBox
+      import scalafx.scene.control.TextField
+      import scalafx.scene.control.Button
+     
 
+      val stage = new Stage(){ stage =>
+        scene = new Scene(){
+          content = new HBox(){
+            val textField = new TextField()
+            val button = new Button("create!"){
+              val clock = """clock (\d+)""".r
+              onAction = {
+                event =>
+                textField.text() match {
+                  case "mouseclicked" =>
+                    val node = new MouseClickedNode() {
+                      translateX = mouseEvent.x
+                      translateY = mouseEvent.y
+                    }
+                    placingArea.addNode(node)
+                    stage.close()
+                  case "reload" =>
+                    val node = new ReloadNode() {
+                      translateX = mouseEvent.x
+                      translateY = mouseEvent.y
+                    }
+                    placingArea.addNode(node)
+                    node.addSender(Field.actor)
+                    stage.close()
+                  case clock(clockTime) =>
+                    try {
+                      val node = new ClockNode(clockTime.toInt) {
+                        translateX = mouseEvent.x
+                        translateY = mouseEvent.y
+                      }
+                      placingArea.addNode(node)
+                    } catch {
+                      case _ =>
+                    }
+                    stage.close()
+                  case _ =>
+                    
+                }
+              }
+            }
+            children = Seq(textField, button)
+          }
+        }
+      }
+      stage.show()
+    }
+  }
+}

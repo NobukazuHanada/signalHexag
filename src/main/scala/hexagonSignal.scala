@@ -16,13 +16,18 @@ import hexasignal.view.PlacingField
 import hexasignal.view.Field
 import hexasignal.sound.Sound
 
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import akka.pattern.ask
+
+import akka.util.Timeout
+import scala.concurrent.duration._
 
 
 object Main extends JFXApp {
   val field = new PlacingField()
 
-  stage = new JFXApp.PrimaryStage {
+  stage = new JFXApp.PrimaryStage { stage =>
     title.value = "Hexagon Signal Editor"
     width = 930
     height = 730
@@ -30,15 +35,10 @@ object Main extends JFXApp {
     scene = new Scene {
       fill = Black
 
+      content = field
+      field.minWidth <== stage.width
+      field.minHeight <== stage.height
 
-
-      field.createRectMatcherNode(50.0 + 70.0, 10.0)
-      field.createRectRewriter(50.0 + 80.0, 20.0)
-
-      content = new HBox(field) {
-        translateX = 10
-        translateY = 10
-      }
       import scalafx.stage.WindowEvent
 
       handleEvent(WindowEvent.WindowCloseRequest) {
@@ -50,56 +50,6 @@ object Main extends JFXApp {
       }
     }
   }
-
-
-  import hexasignal.model.{ViewModel, ViewModelRenderer
-  ,ViewModelEditor}
-  
-  val viewModel = new ViewModel()
-  val viewStage = new Stage(){
-    title() = "Hexagon Signal View"
-
-    width = 500
-    height = 500
-
-    val vmr = new ViewModelRenderer(viewModel)
-    scene = vmr
-
-    val animationTimer = AnimationTimer(
-      (time) => {
-        val dataModel = viewModel.dataModel
-        field.sendToNode(dataModel)
-      }
-    )
-    animationTimer.start()
-    import akka.pattern.ask
-    import scala.collection.mutable.ListBuffer
-    import Field.timeout
-    import hexasignal.view.Data
-    import scala.concurrent.ExecutionContext.Implicits.global
-    import scala.concurrent.Future
-
-    def askLoop : Future[Unit] = {
-      ask(Field.actor, Field.GetCommands).mapTo[List[Any]].map {
-        commands => commands map {
-          case Data(id, data) =>
-            println(data)
-            viewModel(id) = data
-        }
-      }
-    } flatMap(_=> askLoop)
-    val future = askLoop
-  }
-
-  //  viewStage.show()
-  // viewStage.toFront()
-
-  val viewModelEditorStage = new Stage{
-    val vme = new ViewModelEditor(viewModel);
-    scene = vme
-  }
-
-  //viewModelEditorStage.show();
 
   import hexasignal.pico.editor.PicoTextEditor
   import hexasignal.pico.editor.PicoValueTable.PicoValueTable
@@ -151,15 +101,20 @@ object Main extends JFXApp {
   env = env.addForeignFunc("draw")(drawer.draw)
   env = env.addForeignFunc("sinOsc")(Sound.sinOsc)
   env = env.addForeignFunc("play")(Sound.play)
+  env = env.addForeignFunc("perc")(Sound.perc)
+  env = env.addForeignFunc("toy*")(Sound.mul)
+
 
   val picoVM = new PicoVM(env)
+  val picoTextEditor = new PicoTextEditor(picoVM)
+  val picoASTEditor = new PicoASTEditor(picoVM)
   val picoEditorStage = new Stage{
     title = "pico editor"
     scene = new Scene(){
       content = new HBox() {
         children = Seq(
-          new PicoTextEditor(picoVM),
-          new PicoASTEditor(picoVM)
+          picoTextEditor,
+          picoASTEditor
         )
       }
     }
@@ -171,4 +126,17 @@ object Main extends JFXApp {
     scene = new Scene(){ content = new PicoValueTable(picoVM) }
   }
   picoValueTableStage.show()
+
+
+  renderer.eventReceiver = Some(Field)
+  implicit val timeout = new Timeout(600.seconds)
+  def askLoop : Future[Unit] = {
+    ask(Field.actor, Field.GetCommands).mapTo[List[Any]].map {
+      commands => commands map {
+        case hexasignal.view.Reload =>
+          picoTextEditor.reload
+      }
+    }
+  } flatMap(_=> askLoop)
+  val future = askLoop
 }

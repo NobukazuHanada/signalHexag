@@ -1,7 +1,6 @@
 package hexasignal.sound
 
 
-
 import hexasignal.pico.Runner.EntBool
 import hexasignal.pico.Runner.EntTrue
 import hexasignal.pico.Runner.EntNumber
@@ -24,6 +23,7 @@ object Toy {
   sealed abstract class Env
   case class SinOsc(freq:Double, pharse:Double) extends Toy
   case class Perc(attack:Double, releaseTime:Double, level:Double, curve:Double) extends Env
+  case class PercSin(s:SinOsc, p: Perc) extends Toy
 }
 
 
@@ -33,6 +33,7 @@ object Sound {
   val server : Future[Server] = serverPromise.future
   import scala.collection.mutable.Map 
   val synthTable : Map[String,Synth] = Map()
+  var loadSinOscCounter = 0
 
   cfg.program = "/Applications/SuperCollider/SuperCollider.app/Contents/Resources/scsynth"
 
@@ -71,7 +72,17 @@ object Sound {
           synth.set("phrase" -> phrase)
           synth.set("amp" -> phrase)
         }
-        
+      }
+      EntTrue
+    case Seq(EntForeignValue(Toy.PercSin(Toy.SinOsc(freq, phrase),
+                                         Toy.Perc(a,r,c,l))))  =>
+
+      val synthDef = SynthDef("perc") {
+        val f =  "freq".kr(freq)
+        val p = "phrase".kr(phrase)
+        val amp = "amp" .kr(  1.0)
+        val env = EnvGen.ar(Env.perc(a,r)) 
+        Out.ar(0, Pan2.ar(SinOsc.ar(f,p) * env))
       }
       EntTrue
   }
@@ -90,5 +101,9 @@ object Sound {
       Toy.Perc(attack, releaseTime, level, curve)
   }
 
+  def mul : PartialFunction[Seq[Entity], Toy.PercSin] = {
+    case Seq(EntForeignValue(s:Toy.SinOsc), EntForeignValue(p:Toy.Perc)) =>
+      Toy.PercSin(s,p)
+  }
 
 }

@@ -51,7 +51,21 @@ object Main extends JFXApp {
     }
   }
 
-  import hexasignal.pico.editor.PicoTextEditor
+  import hexasignal.natsuki.editor.CodeEditor
+
+  val codeEditor =  new CodeEditor()
+  val codeEditorStage = new Stage() {
+    width = 500
+    height = 500
+    scene = new Scene() {
+      title = "natsuki code editor Stage"
+      content = codeEditor
+    }
+  }
+
+  codeEditorStage.show()
+
+  /*import hexasignal.pico.editor.PicoTextEditor
   import hexasignal.pico.editor.PicoValueTable.PicoValueTable
   import hexasignal.pico.PicoVM
   import hexasignal.pico.Runner._
@@ -138,5 +152,5 @@ object Main extends JFXApp {
       }
     }
   } flatMap(_=> askLoop)
-  val future = askLoop
+  val future = askLoop */
 }

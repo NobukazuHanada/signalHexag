@@ -112,6 +112,8 @@ class PlacingField extends Pane {
       }
     }
 
+
+
     node.hexagon.handleEvent(MouseDragEvent.MouseDragEntered){
       (event: MouseEvent) =>
       if( selectedNode.nonEmpty && !selectedNode.contains(this) ){
@@ -130,6 +132,7 @@ class PlacingField extends Pane {
         placingArea.connect(n, node)
       }
     }
+
 
     node.handleEvent(MouseEvent.MouseDragged) {
       (event: MouseEvent) =>
@@ -154,8 +157,28 @@ class PlacingField extends Pane {
     }
   }
 
+
+  var move = false
+  var vectors : List[Vector2] = List()
+  handleEvent(MouseEvent.MouseMoved) {
+    event: MouseEvent =>
+    if( move )
+      vectors :+= Vector2(event.screenX, event.screenY)
+  }
+
   handleEvent(MouseEvent.MouseClicked) {
     (mouseEvent: MouseEvent) =>
+    if( move == false ){
+      move = true
+    }else{
+      move = false
+      GestureParser.parse(vectors) match {
+        case Some(t) => println(t)
+        case _ =>
+      }
+      vectors = List()
+
+    }
     if( mouseEvent.clickCount == 2) {
       import scalafx.stage.Stage
       import scalafx.scene.Scene

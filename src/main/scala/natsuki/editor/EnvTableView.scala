@@ -6,11 +6,5 @@ import scalafx.scene.control.{
   TableColumn
 }
 
-import hexasignal.natsuki.{
-  Evaluator
-}
-import Evaluator.{
-  Environment
-}
 
 

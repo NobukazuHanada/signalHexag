@@ -1,45 +1,65 @@
 package hexasignal.natsuki
 
 
-import hexasignal.natsuki.{Reader => NatsukiReader }
-import Evaluator.RootEnv
+import scala.util.parsing.input.Reader 
 import scala.util.parsing.input.CharSequenceReader
 import scala.util.parsing.combinator.Parsers
 
+import scalafx.beans.property.{
+  ObjectProperty,
+  IntegerProperty
+}
+
 class VM {
-  var text : String = ""
   var sexprs : Seq[SExpr] = Seq()
-  var syntaxTrees : Seq[SyntaxTree] = Seq()
+  var sexprTable : SExprTable = SExprTable()
+  val parser = new Parser()
+  var positionTable = PositionTable()
 
-  val reader = new NatsukiReader()
-  val parser = new NatsukiParser()
-  val evaluator = new  Evaluator()
-  val env = new RootEnv
+  def get[S <: SExpr](ref: SExprRef[S]) : Option[S] =
+    (sexprTable.map get ref).map(_.asInstanceOf[S])
+
+  def update[S <: SExpr](ref: SExprRef[S], newValue:S) : Unit = {
+    val oldValue = sexprTable.map(ref)
+    sexprTable = sexprTable.update(ref, newValue)
+    eventsOnChangeSExpr.foreach(_.apply(ref, oldValue, newValue))
+  }
+
+  def swap[S <: SExpr, T <: SExpr](s:S,t:T) : Unit = {
 
 
-  def run : Unit = {
-    import reader._
+    
+
+  }
+
+  var eventsOnRun : List[VM => Any] = List()
+  var eventsOnChangeSExpr : List[(SExprRef[SExpr], SExpr, SExpr) => Any] = List()
+
+  def fireEventOnRun : Unit = 
+    eventsOnRun.foreach( _.apply(this))
+
+
+  def addEventsOnChangeSExpr(f:(SExprRef[SExpr], SExpr, SExpr) => Any) =
+    eventsOnChangeSExpr = f :: eventsOnChangeSExpr
+
+  def run(text:String) : Unit = {
     var noerror = true
-    var next = new CharSequenceReader(text)
+    var next : Reader[Char] = new CharSequenceReader(text)
     sexprs = Seq()
-    syntaxTrees = Seq()
-   while( noerror && !next.atEnd  )
-    parse(sexpr, new CharSequenceReader(text)) match {
-      case Success(sexpr, next) =>
-        sexprs :+= sexpr
-        val parseResult = parser.parse(sexpr)
-        parseResult match {
-          case parser.Success(syntaxTree) =>
-            syntaxTrees :+= syntaxTree
-          case _ =>
-            noerror = false
-        }
-      case Error(msg, next) =>
+    parser.parse(parser.sexprs, next) match {
+      case parser.Success(sexprs1, next2) =>
+        next = next2
+        sexprs = sexprs1
+      case parser.Error(msg, next2) =>
         noerror = false
-      case Failure(msg, next) =>
+        next = next2
+      case parser.Failure(msg, next2) =>
         noerror = false
+        next = next2
     }
-   
+    sexprTable = parser.sexprTable
+    positionTable = parser.positionTable
+    fireEventOnRun
   }
 
 

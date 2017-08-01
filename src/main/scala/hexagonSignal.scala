@@ -52,14 +52,18 @@ object Main extends JFXApp {
   }
 
   import hexasignal.natsuki.editor.CodeEditor
+  import hexasignal.natsuki.VM
+  import hexasignal.treeviews.TreeViews
 
-  val codeEditor =  new CodeEditor()
+  val vm = new VM
+  val codeEditor =  new CodeEditor(vm)
+  val treeviews = new TreeViews(vm, codeEditor)
   val codeEditorStage = new Stage() {
-    width = 500
+    width = 1000
     height = 500
     scene = new Scene() {
       title = "natsuki code editor Stage"
-      content = codeEditor
+      content = new HBox(codeEditor, treeviews)
     }
   }
 

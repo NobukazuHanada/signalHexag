@@ -12,23 +12,27 @@ class Parser extends RegexParsers{
   override val skipWhitespace = false
 
   val w = whiteSpace
+  var updateScprTable = true
   var positionTable = PositionTable()
   var sexprTable = SExprTable()
 
   def setTable[T <: SExpr](t:T) : T = {
-    sexprTable = sexprTable + t
+    if( updateScprTable ){ sexprTable = sexprTable + t }
     t
   }
 
 
-  def ranged[T](p: => Parser[T]) : Parser[(PositionRef, T)] = Parser { in =>
+  def ranged[T](p: => Parser[T]) : Parser[(Range,T)] = Parser { in =>
     p(in) match {
       case Success(i:T, in1) =>
         Success({
                   val (posRef, newPositionTable) =
                     positionTable.createPos(in.pos.asInstanceOf[OffsetPosition].offset)
-                  positionTable = newPositionTable
-                  (posRef, i)}, in1)
+
+                  val (posRef2, newPositionTable1) =
+                    newPositionTable.createPos(in1.pos.asInstanceOf[OffsetPosition].offset)
+                  positionTable = newPositionTable1
+                  (Range(posRef, posRef2), i)}, in1)
       case ns: NoSuccess => ns
     }
    }
@@ -49,7 +53,7 @@ class Parser extends RegexParsers{
     t | f
 
   def symbol : Parser[Atom.Sym] =
-    ranged("""[a-z!?#%$&*+\-\\*.<=>~@_][[a-zA-Z!?#%$&*+\-\\*.<=>~@_]]*""".r) ^^ { case (i, m) =>
+    ranged("""[a-z!?%#$&*+\-\\*.<=>~@_][[a-zA-Z!?#%$&*+\-\\*.<=>~@_]]*""".r) ^^ { case (i, m) =>
         val s = m.toString
       setTable(Atom.Sym(s, i))
     }
@@ -85,10 +89,17 @@ class Parser extends RegexParsers{
     ranged((numI <~ "/") ~ numI) ^^ {
       case (i, n ~ d) =>
         setTable(Atom.Num.R(n.i, d.i, i))
-      }
+    }
+
+  def metaVar : Parser[MetaVar] =
+    ranged(
+      "<" ~> """[^>]*""".r <~">"
+    ) ^^ { case (i,v) =>
+        setTable(MetaVar(v,i))
+    }
 
   def atom : Parser[Atom] =
-    bool | symbol | v | str | numR | numD | numI
+     metaVar | bool | symbol | v | str | numR | numD | numI 
 
 
 
@@ -169,4 +180,52 @@ class Parser extends RegexParsers{
     fn | setVar | ifexpr | let | apply | consList | atom
 
   def sexprs : Parser[List[SExpr]] = repsep(sexpr, w)
+}
+
+object UnParser {
+  import Atom._
+  import Num._
+
+  def unParse(sexpr:SExpr, sexprTable: SExprTable) : String = {
+    sexpr match {
+      case Sym(s,_,_) => s
+      case Str(s,_,_) => "\"" + s + "\""
+      case Var(s,_,_) => s
+      case I(i,_,_) => i.toString()
+      case D(d,_,_) => d.toString()
+      case R(n,d,_,_) => s"$n/$d"
+      case ConsList(list,_,_) =>
+        list.map(unParse(_, sexprTable)).mkString("("," ",")")
+      case Apply(func, args,_,_) =>
+        val argsText = args.map(unParse(_, sexprTable)).mkString(" ")
+        s"(${unParse(func,sexprTable)} $argsText)"
+      case Fn(name, args, exprs, _, _) =>
+        val argsText = args.map(unParse(_, sexprTable)).mkString(" ")
+        val exprsText = exprs.map(unParse(_, sexprTable)).mkString(" ")
+        s"(fn ${unParse(name, sexprTable)} $argsText -> $exprsText )"
+      case SetVar(name, expr,_,_) =>
+        s"(set ${unParse(name, sexprTable)}  ${unParse(expr, sexprTable)})"
+      case IF(cond, t, e, _, _) =>
+        val condText = unParse(cond, sexprTable)
+        val thenText = unParse(t, sexprTable)
+        val elsText = e match {
+          case Some(e1) => unParse(e1, sexprTable)
+          case None => ""
+        }
+        s"(if $condText $thenText $elsText)"
+      case Let(bindings, expr, _, _) =>
+        val bindingsText = (bindings.map { case (v,e) =>
+                              val vText = unParse(v, sexprTable)
+                              val eText = unParse(e, sexprTable)
+                              s"$vText $eText"
+                            }).mkString("["," ","]")
+        val exprText = expr.map(unParse(_, sexprTable)).mkString(" ")
+        s"(let $bindingsText $exprText)"
+    }
+  }
+
+  def unParse(sexr:SExprRef[SExpr], sexprTable: SExprTable) : String = {
+    unParse(sexprTable.map(sexr),
+      sexprTable)
+  }
 }

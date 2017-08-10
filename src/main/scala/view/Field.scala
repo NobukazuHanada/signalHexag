@@ -15,6 +15,7 @@ import akka.util.Timeout
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
+import hexasignal.natsuki.VM
 
 object Field extends  EventReceiver{
   val actorSystem = ActorSystem.create("syghexActorSystem")
@@ -55,14 +56,15 @@ class FieldActor extends Actor {
   }
 }
 
-class PlacingField extends Pane {
+class PlacingField(val vm: VM) extends Pane {
   placingArea =>
   
   var selectedNode : Option[Node] = None
+  val inspectorView = new InspectorView()
   var connectors : Map[(Node,Node), Arrow] = Map()
   var nodes : List[Node] = List()
 
-  style = "-fx-border-color: white"
+  //style = "-fx-border-color: white"
   minWidth = 300
   minHeight = 600
 
@@ -73,7 +75,7 @@ class PlacingField extends Pane {
       arrow.startY <== startNode.translateY
       arrow.endX <== endNode.translateX
       arrow.endY <== endNode.translateY
-      children.add(arrow)
+      children.add(0, arrow)
       connectors += (startNode -> endNode) -> arrow
       startNode.addToNode(endNode)
       for{
@@ -94,6 +96,17 @@ class PlacingField extends Pane {
   def addNode(node: Node) {
     children.add(node)
     nodes :+= node
+    
+    node.hexagon.handleEvent(MouseEvent.MouseClicked)
+    { (event: MouseEvent) =>
+      inspectorView.inspectedNode = node
+      node match {
+        case n:ClickNode =>
+          n.send(Message.MBang)
+        case _ =>
+      }
+    }
+
     node.hexagon.handleEvent(MouseEvent.DragDetected)
     { (event: MouseEvent) =>
       startFullDrag()
@@ -158,34 +171,20 @@ class PlacingField extends Pane {
   }
 
 
-  var move = false
-  var vectors : List[Vector2] = List()
   handleEvent(MouseEvent.MouseMoved) {
     event: MouseEvent =>
-    if( move )
-      vectors :+= Vector2(event.screenX, event.screenY)
   }
 
   handleEvent(MouseEvent.MouseClicked) {
     (mouseEvent: MouseEvent) =>
-    if( move == false ){
-      move = true
-    }else{
-      move = false
-      GestureParser.parse(vectors) match {
-        case Some(t) => println(t)
-        case _ =>
-      }
-      vectors = List()
-
-    }
     if( mouseEvent.clickCount == 2) {
       import scalafx.stage.Stage
       import scalafx.scene.Scene
       import scalafx.scene.layout.HBox
       import scalafx.scene.control.TextField
       import scalafx.scene.control.Button
-     
+
+
 
       val stage = new Stage(){ stage =>
         scene = new Scene(){
@@ -195,36 +194,8 @@ class PlacingField extends Pane {
               val clock = """clock (\d+)""".r
               onAction = {
                 event =>
-                textField.text() match {
-                  case "mouseclicked" =>
-                    val node = new MouseClickedNode() {
-                      translateX = mouseEvent.x
-                      translateY = mouseEvent.y
-                    }
-                    placingArea.addNode(node)
-                    stage.close()
-                  case "reload" =>
-                    val node = new ReloadNode() {
-                      translateX = mouseEvent.x
-                      translateY = mouseEvent.y
-                    }
-                    placingArea.addNode(node)
-                    node.addSender(Field.actor)
-                    stage.close()
-                  case clock(clockTime) =>
-                    try {
-                      val node = new ClockNode(clockTime.toInt) {
-                        translateX = mouseEvent.x
-                        translateY = mouseEvent.y
-                      }
-                      placingArea.addNode(node)
-                    } catch {
-                      case _ =>
-                    }
-                    stage.close()
-                  case _ =>
-                    
-                }
+                createNode(textField.text(), mouseEvent)
+                stage.close()
               }
             }
             children = Seq(textField, button)
@@ -234,4 +205,127 @@ class PlacingField extends Pane {
       stage.show()
     }
   }
+
+
+  def createNode(name:String, mouseEvent: MouseEvent) : Unit = {
+    trait Positioned extends Node {
+      translateX = mouseEvent.x
+      translateY = mouseEvent.y
+    }
+
+    name match {
+      case "metro" =>
+        val node = new MetroNode() with Positioned
+        placingArea.addNode(node)
+      case "click" =>
+        val node = new ClickNode() with Positioned
+        placingArea.addNode(node)
+      case "key" =>
+        val node = new KeyNode() with Positioned
+        placingArea.addNode(node)
+      case "watch" =>
+        val node = new WatchNode(vm) with Positioned
+        placingArea.addNode(node)
+      case "code" =>
+        val node = new CodeNode(vm) with Positioned
+        placingArea.addNode(node)
+      case "filter" =>
+        val node = new FilterNode(vm) with Positioned
+        placingArea.addNode(node)
+      case "trans" =>
+        val node = new TransNode(vm) with Positioned
+        placingArea.addNode(node)
+      case "reload" =>
+        val node = new ReloadNode(vm) with Positioned
+        placingArea.addNode(node)
+      case "delay" =>
+        val node = new DelayNode() with Positioned
+        placingArea.addNode(node)
+      case _ =>
+    }
+  }
+
+  class InspectorView extends Pane {
+    import scalafx.scene.paint.Color
+    style() = "-fx-background-color: white"
+    prefWidth = 200
+    minHeight() = placingArea.minHeight()
+    style = "-fx-background-color: rgb(136,136,136)"
+
+    private var _inspectedNode : Option[Node] = None
+    def inspectedNode : Option[Node] = _inspectedNode
+    def inspectedNode_=(node:Node): Unit = {
+      _inspectedNode = Some(node)
+      children.removeAll(children)
+
+      import scalafx.scene.control.{
+        TextArea, Label, TextField
+      }
+      import scalafx.scene.layout.VBox
+      import scalafx.geometry.Pos
+
+      val result = node match {
+        case node:MetroNode =>
+          val title = new Label("metro inspector")
+          title.textFill = Color.White
+          val space = new Label("")
+          val label = new Label("time interval")
+          label.textFill = Color.White
+          val textField = new TextField()
+          val vbox = new VBox(10, title, space, label, textField)
+          vbox.padding = scalafx.geometry.Insets(10,10,10,10)
+          children.add(vbox)
+
+        case node:ClickNode =>
+          val title = new Label("click inspector")
+          title.textFill = Color.White
+          val vbox = new VBox(10, title)
+          vbox.padding = scalafx.geometry.Insets(10,10,10,10)
+          children.add(vbox)
+
+
+        case node:KeyNode =>
+          val title = new Label("key inspector")
+          title.textFill = Color.White
+          val vbox = new VBox(10, title)
+          vbox.padding = scalafx.geometry.Insets(10,10,10,10)
+          children.add(vbox)
+
+
+        case node:WatchNode =>
+          val title = new Label("watch inspector")
+          title.textFill = Color.White
+          val space = new Label("")
+          val label = new Label("code")
+          label.textFill = Color.White
+          val textField = new TextArea()
+          val vbox = new VBox(10, title, space, label, textField)
+          vbox.padding = scalafx.geometry.Insets(10,10,10,10)
+          children.add(vbox)
+
+        case node:CodeNode =>
+          children.add(node.vbox)
+
+        case filter:FilterNode =>
+          children.add(filter.vbox)
+
+        case node:TransNode =>
+          children.add(node.vbox)
+
+
+        case node:ReloadNode =>
+          val title = new Label("reload inspector")
+          title.textFill = Color.White
+          val vbox = new VBox(10, title)
+          vbox.padding = scalafx.geometry.Insets(10,10,10,10)
+          children.add(vbox)
+
+        case node:DelayNode =>
+          children.add(node.vbox)
+      }
+    }
+
+  }
+
+
 }

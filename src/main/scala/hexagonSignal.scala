@@ -5,7 +5,7 @@ import scalafx.application.JFXApp
 import scalafx.stage.Stage
 import scalafx.scene.{Scene, Group, Node => FxNode}
 import scalafx.animation.{Timeline, KeyValue, KeyFrame, Animation, AnimationTimer}
-import scalafx.scene.layout.HBox
+import scalafx.scene.layout.{HBox, BorderPane}
 import scalafx.scene.transform.{Translate}
 import scalafx.scene.shape.Sphere
 import scalafx.scene.PerspectiveCamera
@@ -25,7 +25,12 @@ import scala.concurrent.duration._
 
 
 object Main extends JFXApp {
-  val field = new PlacingField()
+  import hexasignal.natsuki.editor.CodeEditor
+  import hexasignal.natsuki.VM
+  import hexasignal.treeviews.TreeViews
+
+  val vm = new VM
+  val field = new PlacingField(vm)
 
   stage = new JFXApp.PrimaryStage { stage =>
     title.value = "Hexagon Signal Editor"
@@ -33,11 +38,12 @@ object Main extends JFXApp {
     height = 730
 
     scene = new Scene {
-      fill = Black
+      fill = rgb(193,193,193)
 
-      content = field
-      field.minWidth <== stage.width
-      field.minHeight <== stage.height
+      val borderPane = new BorderPane(field, null, field.inspectorView, null, null)
+      content = borderPane
+      borderPane.prefWidth = 930
+      borderPane.prefHeight = 730
 
       import scalafx.stage.WindowEvent
 
@@ -51,13 +57,8 @@ object Main extends JFXApp {
     }
   }
 
-  import hexasignal.natsuki.editor.CodeEditor
-  import hexasignal.natsuki.VM
-  import hexasignal.treeviews.TreeViews
-
-  val vm = new VM
   val codeEditor =  new CodeEditor(vm)
-  val treeviews = new TreeViews(vm, codeEditor)
+  val treeviews = new TreeViews(vm)
   val codeEditorStage = new Stage() {
     width = 1000
     height = 500

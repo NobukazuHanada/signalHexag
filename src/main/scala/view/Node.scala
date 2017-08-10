@@ -90,9 +90,14 @@ trait Node
   val from : ArrayBuffer[Node] = ArrayBuffer.empty[Node]
   val to : ArrayBuffer[Node] = ArrayBuffer.empty[Node]
 
+  def receive(m: Message) : Unit = {}
+
+  def send(m: Message) : Unit =
+    to.map(_.receive(m))
+
   def addToNode(node: Node) {
-    from += node
-    node.to += this
+    to += node
+    node.from += this
   }
 
   def deleteToNode(node: Node) {
@@ -106,6 +111,5 @@ trait Node
   val connectorView = new Arrow()
   val dragEventHover =  BooleanProperty(false)
 
-  hexagon.fill <== when(hover || pressed || dragEventHover) choose rgb(100,100,100,0.5) otherwise rgb(100,100,100,0.1)
-
+  hexagon.fill <== when(hover || pressed || dragEventHover) choose rgb(100,100,100,0.5) otherwise rgb(163,163,163)
 }

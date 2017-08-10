@@ -52,6 +52,27 @@ object Sound {
     }
   }
 
+  def playSin(freq: Int, phrase: Int) = {
+    for(serv <- server){
+      if( synthTable == Map() ){
+        val synthDef = SynthDef("sinOsc") {
+          val f =  "freq".kr(freq)
+          val p = "phrase".kr(phrase)
+          val amp = "amp" .kr(  1.0)
+          Out.ar(0, Pan2.ar(SinOsc.ar(f,p) * amp))
+        }
+        val s = synthDef.play(serv)
+        val id = IDGenerator.generate.IdString
+        synthTable(id) = s
+      }
+      for((id, synth) <- synthTable){
+        synth.set("freq" -> freq)
+        synth.set("phrase" -> phrase)
+        synth.set("amp" -> phrase)
+      }
+    }
+  }
+
 
   def play : PartialFunction[Seq[Entity], EntBool] = {
     case Seq(EntForeignValue(Toy.SinOsc(freq, phrase)))  =>

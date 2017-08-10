@@ -3,7 +3,7 @@ package hexasignal.treeviews
 import scalafx.Includes._
 import scalafx.scene.shape.{Rectangle, Line}
 import scalafx.scene.text.Text
-import scalafx.scene.control.{TextField}
+import scalafx.scene.control.{TextField, ScrollPane}
 import scalafx.scene.input.{KeyEvent, KeyCode}
 import scalafx.beans.property.{DoubleProperty, ObjectProperty}
 import scalafx.scene.layout.{Pane, HBox, BorderStroke, Region}
@@ -21,15 +21,43 @@ import hexasignal.natsuki.editor.CodeEditor
 import scala.util.parsing.input.OffsetPosition
 import hexasignal.natsuki
 import natsuki.Atom
+import scalafx.beans.property.StringProperty
 
 
-class TreeViews(val vm : VM, val textEditor : CodeEditor ) extends Pane { treeview =>
+
+class TreeViews(val vm : VM ) extends Pane { treeview =>
   import hexasignal.natsuki._
 
   val unitW = 10
   val unitH = 10
   minWidth = 500
   minHeight = 500
+
+  var selectedNode : ObjectProperty[Option[SExprNode]] =
+    ObjectProperty(None)
+
+  val selectedNodeText = StringProperty("")
+
+  selectedNode.onChange((_,_,newValue) =>
+    newValue match {
+      case Some(t) => selectedNodeText() = vm.getText(t.sexpr)
+      case None => selectedNodeText() = ""
+    }
+  )
+
+
+  vm.text.onChange { (_,_,_) =>
+    selectedNode() match {
+      case Some(t) => selectedNodeText() = vm.getText(t.sexpr)
+      case None => selectedNodeText() = ""
+    }
+  }
+
+  var currentY : Double = 0
+  vm.sexprs.foreach{
+    expr =>
+    currentY = addSExprNode(0, currentY + 10, SExprNode(expr))
+  }
 
   vm.eventsOnRun :+= {vm:VM =>
     if( children.length > 0){
@@ -39,7 +67,7 @@ class TreeViews(val vm : VM, val textEditor : CodeEditor ) extends Pane { treevi
     var currentY : Double = 0
     vm.sexprs.foreach{
       expr =>
-      currentY = addSExprNode(0, currentY + 10, SExprNode(expr))
+      currentY = addSExprNode(0, currentY + 10, SExprNode(expr.ref))
     }
   }
 
@@ -132,7 +160,9 @@ class TreeViews(val vm : VM, val textEditor : CodeEditor ) extends Pane { treevi
     spacing = 10
     alignment() = Pos.Center
     padding() = Insets(2,2,2,2)
-    style() = "-fx-border-color: black;-fx-background-color: white "
+    val selectedStyle = "-fx-border-color: black;-fx-background-color: gray"
+    val nonSelectedStyle = "-fx-border-color: black;-fx-background-color: white"
+    style() = nonSelectedStyle
     prefWidth() = 100
     prefHeight() = 33.0
 
@@ -141,6 +171,8 @@ class TreeViews(val vm : VM, val textEditor : CodeEditor ) extends Pane { treevi
     val lines : ObjectProperty[List[Line]] = ObjectProperty(List())
 
     var siblings : List[SExprNode] = List()
+    var selected = false
+
 
     handleEvent(MouseEvent.DragDetected)
     { (event: MouseEvent) =>
@@ -160,6 +192,24 @@ class TreeViews(val vm : VM, val textEditor : CodeEditor ) extends Pane { treevi
           event.consume()
         case Secondary =>
         case _ =>
+      }
+    }
+
+
+    handleEvent(MouseEvent.MouseClicked){
+      (event: MouseEvent) =>
+      selectedNode() match {
+        case None =>
+          selectedNode() = Some(this)
+          this.selected = true
+          this.style() = selectedStyle
+
+        case Some(node) =>
+          node.selected = false
+          node.style() = nonSelectedStyle
+          selectedNode() = Some(this)
+          this.selected = true
+          this.style() = selectedStyle
       }
     }
 

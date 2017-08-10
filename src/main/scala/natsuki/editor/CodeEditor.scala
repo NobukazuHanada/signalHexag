@@ -15,6 +15,9 @@ class CodeEditor(val vm: VM) extends TextArea("") {
 
   minHeight = 600
 
+  text() = vm.text()
+  vm.text <==> this.text
+
   handleEvent(MouseEvent.MouseClicked) {
     (e:MouseEvent) =>
     vm.run(text())
@@ -25,21 +28,21 @@ class CodeEditor(val vm: VM) extends TextArea("") {
       import hexasignal.natsuki.Atom._
         (oldSExpr, newSExpr) match {
         case (Sym(oldString,_,_), Sym(newString,_,_)) =>
-          changeText(oldSExpr.pos, oldString, newString)
+          changeText(oldSExpr.pos.start, oldString, newString)
         case (Var(oldString,_,_), Var(newString,_,_)) =>
-          changeText(oldSExpr.pos, oldString, newString)
+          changeText(oldSExpr.pos.start, oldString, newString)
         case (Str(oldString,_,_), Str(newString,_,_)) =>
-          changeText(oldSExpr.pos, oldString, newString)
+          changeText(oldSExpr.pos.start, oldString, newString)
         case (Num.I(oldI,_,_), Num.I(newI,_,_)) =>
-          changeText(oldSExpr.pos, oldI.toString(), newI.toString())
+          changeText(oldSExpr.pos.start, oldI.toString(), newI.toString())
         case (Num.D(oldD,_,_), Num.D(newD,_,_)) =>
-          changeText(oldSExpr.pos, oldD.toString(), newD.toString())
+          changeText(oldSExpr.pos.start, oldD.toString(), newD.toString())
         case (Num.R(oldNR,oldDR,_,_), Num.R(newNR,newDR,_,_)) =>
-          changeText(oldSExpr.pos,
+          changeText(oldSExpr.pos.start,
                      oldNR.toString() + "/" + oldDR.toString(),
                      newNR.toString() + "/" + newDR.toString())
         case (Bool(oldB,_,_), Bool(newB,_,_)) =>
-          changeText(oldSExpr.pos, oldB.toString(), newB.toString())
+          changeText(oldSExpr.pos.start, oldB.toString(), newB.toString())
         case _=>
       }
   }
@@ -59,7 +62,6 @@ class CodeEditor(val vm: VM) extends TextArea("") {
         }
     }
     vm.positionTable = PositionTable(newPositionMap)
-
   }
 
 }

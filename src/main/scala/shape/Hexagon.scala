@@ -41,8 +41,11 @@ object Hexagon {
       translateY = y
     }
 
-  def polygon : javafx.scene.shape.Polygon =
-    new javafx.scene.shape.Polygon(points:_*)
+  def polygon : javafx.scene.shape.Polygon = {
+    val p = new javafx.scene.shape.Polygon(points:_*)
+    p.rotate = 90
+    p
+  }
 
 }
 

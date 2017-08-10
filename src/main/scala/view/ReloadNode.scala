@@ -3,30 +3,46 @@ package hexasignal.view
 import akka.actor.{Actor, ActorRef, Props}
 import hexasignal.IDGenerator
 import hexasignal.Id
-import scala.concurrent.Future
-import scalafx.scene.text.Text
-import scalafx.scene.paint.Color
 import scalafx.Includes._
-
-object Reload
-
-class ReloadNode extends Node {
-  val actorId : Id = IDGenerator.generate("reload-node")
-  val actor : Future[ActorRef] = Field.createActor(Props[ReloadProcess])
-
-  val text = new Text{
-    text = "reload"
-    fill = Color.White
-  }
-  children.add(text)
+import scalafx.scene.text.{Text, TextAlignment}
+import scalafx.scene.paint.Color
+import scalafx.scene.input.MouseEvent
+import scalafx.scene.Scene
+import scalafx.stage.Stage
+import scalafx.scene.layout.{
+  HBox,
+  VBox
+}
+import scalafx.scene.control.{
+  TextField,
+  TextArea,
+  Label
+}
+import scalafx.beans.property.{
+  ObjectProperty
 }
 
-class ReloadProcess extends Actor{
-  var senders : List[ActorRef] = List()
+import scala.concurrent.Future
+import scala.concurrent.ExecutionContext.Implicits.global
 
-  def receive = {
-    case AddSender(sender) => senders :+= sender
-    case Bang =>
-      senders.foreach(_ ! Reload)
+import scala.util.parsing.input.CharSequenceReader
+import hexasignal.natsuki.editor.CodeEditor
+import hexasignal.natsuki.{VM,
+  FilterParser,
+  SExpr,
+  SExprRef
+}
+import hexasignal.treeviews.TreeViews
+
+class ReloadNode(val vm: VM) extends HexNode("reload") {
+
+  override def receive(m:Message) : Unit = {
+    m match {
+      case Message.MCode(expr, pos) =>
+        vm.eval(expr)
+      case _ =>
+
+    }
   }
+  
 }
